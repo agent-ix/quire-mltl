@@ -138,6 +138,20 @@ impl ValidatedMappedResult {
         self.wire.source_result.identity()
     }
 
+    /// Native subject identity, carried verbatim from the source result's
+    /// own embedded wire content (FR-004-AC-3).
+    #[must_use]
+    pub fn subject_identity(&self) -> &str {
+        &self.wire.source.subject_identity
+    }
+
+    /// Native/TL correspondence identity, carried verbatim from the source
+    /// result's own embedded wire content (FR-004-AC-3).
+    #[must_use]
+    pub fn correspondence_identity(&self) -> &str {
+        &self.wire.source.correspondence_identity
+    }
+
     /// Derived value or typed non-value.
     #[must_use]
     pub const fn outcome(&self) -> MappedOutcome {
