@@ -50,18 +50,15 @@ pub const QUIRE_CONTRACT_IR_FR_026: CounterpartContract = CounterpartContract {
     provenance: "quire-contract-ir #71 / PR #78 (merged ad5a418)",
 };
 
-/// `quire-contract-ir` FR-025's accepted native-predicate projection
-/// contract: specified by #63/PR #67, implemented by #70/PR #77 (merged to
-/// `quire-contract-ir` `main` as `fcd27d6`). FR-025 projects checked native
-/// predicates into the same `tl-mltl.temporal-assessment-request/v1`
-/// proposition population this crate's `request` module admits, so the
-/// exchanged bytes pinned here are that request contract's schema digest.
-pub const QUIRE_CONTRACT_IR_FR_025: CounterpartContract = CounterpartContract {
-    label: "quire-contract-ir.FR-025",
-    exchanged_contract: crate::request::CONTRACT,
-    exchanged_schema_sha256: crate::request::SCHEMA_SHA256,
-    provenance: "quire-contract-ir #70 / PR #77 (merged fcd27d6)",
-};
+/// Reason code shared by every class this crate's own strict request
+/// admission (`request::build_wire`'s profile/node-kind/clock-scope checks)
+/// already makes unreachable before `report::evaluate` can run. See each
+/// citing entry's `reason` text for the exact guard.
+const UNREACHABLE_THROUGH_ADMITTED_REQUEST: &str = "unreachable-through-admitted-request";
+
+/// Reason code for the one class `tl_mltl::PositionHistoryDocument::new`
+/// itself refuses to construct, one layer below this crate's own boundary.
+const UNREACHABLE_THROUGH_TL_MLTL_CONSTRUCTOR: &str = "unreachable-through-tl-mltl-constructor";
 
 /// Why a class is `excluded` from the applicable population.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -198,7 +195,7 @@ pub const REGISTRY: &[RegistryEntry] = &[
         token: "clock-history-binding/absent-for-past-request",
         dimensions: "clock/history binding: past history with no clock binding",
         state: ClassState::Excluded(ExcludedClass {
-            reason_code: "unreachable-through-tl-mltl-constructor",
+            reason_code: UNREACHABLE_THROUGH_TL_MLTL_CONSTRUCTOR,
             reason: "`tl_mltl::PositionHistoryDocument::new`'s own \
                 `validate_without_digest` (tl-mltl src/past/mod.rs) requires \
                 `self.clock.as_ref().ok_or(HistoryError::MissingClock)?` before any \
@@ -287,7 +284,7 @@ pub const REGISTRY: &[RegistryEntry] = &[
         token: "execution-truth/failed",
         dimensions: "execution=Failed",
         state: ClassState::Excluded(ExcludedClass {
-            reason_code: "unreachable-through-admitted-request",
+            reason_code: UNREACHABLE_THROUGH_ADMITTED_REQUEST,
             reason: "every EvaluationError/PastEvaluationError arm report.rs::classify_future/\
                 classify_past maps to AssessmentExecution::Failed (TimeOverflow, Horizon, \
                 InvalidNodeReference, PositionArithmeticOverflow, HistoryPositionAbsent, Result) \
@@ -301,7 +298,7 @@ pub const REGISTRY: &[RegistryEntry] = &[
         token: "execution-truth/refused",
         dimensions: "execution=Refused",
         state: ClassState::Excluded(ExcludedClass {
-            reason_code: "unreachable-through-admitted-request",
+            reason_code: UNREACHABLE_THROUGH_ADMITTED_REQUEST,
             reason: "AssessmentExecution::Refused requires EvaluationError::TraceNotStrictlyOrdered \
                 (tl-mltl future/evaluate.rs::validate_trace) or a lane/input mismatch \
                 (report.rs::execute's None arms); trace::validate already refuses an out-of-order \
@@ -322,7 +319,7 @@ pub const REGISTRY: &[RegistryEntry] = &[
         token: "execution-truth/unsupported",
         dimensions: "execution=Unsupported",
         state: ClassState::Excluded(ExcludedClass {
-            reason_code: "unreachable-through-admitted-request",
+            reason_code: UNREACHABLE_THROUGH_ADMITTED_REQUEST,
             reason: "AssessmentExecution::Unsupported requires EvaluationError::UnsupportedProfile/\
                 UnsupportedPastNode or PastEvaluationError::OwnerStatePreserved{Unsupported}/\
                 FutureNodeUnsupported; request::build_wire already matches the evaluator dispatch to \
@@ -368,7 +365,7 @@ pub const REGISTRY: &[RegistryEntry] = &[
         token: "mapped-outcome/non-value-failed",
         dimensions: "mapped outcome=NonValue(Failed)",
         state: ClassState::Excluded(ExcludedClass {
-            reason_code: "unreachable-through-admitted-request",
+            reason_code: UNREACHABLE_THROUGH_ADMITTED_REQUEST,
             reason: "NonValueKind::Failed is contract_ir::outcome's image of \
                 AssessmentExecution::Failed only; see execution-truth/failed for why that execution \
                 state is unreachable through an admitted request",
@@ -394,7 +391,7 @@ pub const REGISTRY: &[RegistryEntry] = &[
         token: "mapped-outcome/non-value-refused",
         dimensions: "mapped outcome=NonValue(Refused)",
         state: ClassState::Excluded(ExcludedClass {
-            reason_code: "unreachable-through-admitted-request",
+            reason_code: UNREACHABLE_THROUGH_ADMITTED_REQUEST,
             reason: "NonValueKind::Refused is contract_ir::outcome's image of \
                 AssessmentExecution::Refused only; see execution-truth/refused for why that execution \
                 state is unreachable through an admitted request",
@@ -420,7 +417,7 @@ pub const REGISTRY: &[RegistryEntry] = &[
         token: "mapped-outcome/non-value-unsupported",
         dimensions: "mapped outcome=NonValue(Unsupported)",
         state: ClassState::Excluded(ExcludedClass {
-            reason_code: "unreachable-through-admitted-request",
+            reason_code: UNREACHABLE_THROUGH_ADMITTED_REQUEST,
             reason: "NonValueKind::Unsupported is contract_ir::outcome's image of \
                 AssessmentExecution::Unsupported only; see execution-truth/unsupported for why that \
                 execution state is unreachable through an admitted request",
@@ -612,7 +609,12 @@ mod tests {
 
     // Trace: TC-087, FR-005-AC-3
     #[test]
-    fn ordered_set_digest_is_stable_and_changes_with_the_registry() {
+    fn ordered_set_digest_is_stable_and_pinned() {
+        // Pinned at this registry revision. Inserting, deleting, reordering,
+        // or renaming a token changes this value -- exactly the "successor
+        // registry identity" FR-005-AC-3 requires -- and this assertion is
+        // the acceptance test that change must update.
+        const PINNED: &str = "2f4d8fd0b6fd6d8a69265e920f89fb9862f6dbca905f284304ba21fd192e3283";
         let first = ordered_set_digest();
         let second = ordered_set_digest();
         assert_eq!(
@@ -623,6 +625,31 @@ mod tests {
             first.len(),
             64,
             "raw_sha256 always emits 64 lowercase hex chars"
+        );
+        assert_eq!(
+            first, PINNED,
+            "REGISTRY's ordered token set changed; if this change was reviewed and \
+             intentional, update PINNED to the new digest printed here"
+        );
+    }
+
+    // Trace: TC-087, FR-005-AC-3
+    #[test]
+    fn ordered_set_digest_is_sensitive_to_order_and_content() {
+        // `ordered_set_digest` is exactly `raw_sha256` over the newline-joined
+        // token list; this proves that function actually depends on both the
+        // set of tokens and their order, independent of the real REGISTRY, so
+        // the pin above is not vacuously stable.
+        let digest_of = |tokens: &[&str]| super::raw_sha256(tokens.join("\n").as_bytes());
+        let original = digest_of(&["a/one", "b/two", "c/three"]);
+        let reordered = digest_of(&["b/two", "a/one", "c/three"]);
+        let renamed = digest_of(&["a/one", "b/two", "c/three-renamed"]);
+        let inserted = digest_of(&["a/one", "b/two", "b/two-and-a-half", "c/three"]);
+        assert_ne!(original, reordered, "reordering must change the digest");
+        assert_ne!(original, renamed, "renaming a token must change the digest");
+        assert_ne!(
+            original, inserted,
+            "inserting a token must change the digest"
         );
     }
 
@@ -658,11 +685,26 @@ mod tests {
     // Trace: TC-087, FR-005-AC-2
     #[test]
     fn every_blocked_class_names_a_dependency_and_admission_condition() {
+        let report = census();
+        // As of this registry revision, no native-correspondence class is
+        // blocked on an unresolved dependency (every FR-025/FR-026
+        // counterpart this census needs is already an accepted, merged
+        // contract revision -- see `QUIRE_CONTRACT_IR_FR_026`'s doc comment).
+        // That is an honest reviewed finding, not an oversight, so this test
+        // pins the count explicitly rather than looping over zero entries:
+        // it fails the moment a `Blocked` entry is added, forcing this
+        // assertion itself to be updated alongside it, and the loop below
+        // then exercises the real per-entry invariant instead of running
+        // zero times.
+        assert_eq!(report.blocked.len(), 0);
         for entry in REGISTRY {
             if let ClassState::Blocked(class) = entry.state {
                 assert!(!class.dependency.is_empty());
                 assert!(!class.admission_condition.is_empty());
+            } else {
+                continue;
             }
+            unreachable!("no REGISTRY entry is Blocked at this revision; see the count above");
         }
     }
 }

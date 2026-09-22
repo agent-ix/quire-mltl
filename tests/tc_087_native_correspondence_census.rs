@@ -58,14 +58,15 @@ fn base_input<'a>(
     }
 }
 
-/// Checks that `bytes`' digest matches the digest recorded when the fixture
-/// was first produced (FR-005-AC-5's "check recorded digests before strict
-/// reading"), then proves a corrupted copy is refused both by the digest
-/// check and, independently, by strict-read machinery -- the fixture's
-/// bytes are never a mismatch "to investigate later".
-fn assert_replayable(bytes: &[u8]) {
+/// FR-005-AC-5: "check recorded digests before strict reading... a fixture
+/// whose bytes... disagree with what it declares is a typed refusal, not a
+/// mismatch to investigate later." Corrupts one byte of `bytes`, proves the
+/// corruption changes the recorded digest (the digest actually depends on
+/// every byte, so the check below is not vacuous), and proves `strict_read`
+/// -- the real reader for this document type -- refuses the corrupted copy
+/// rather than silently accepting altered content.
+fn assert_replay_detects_corruption(bytes: &[u8], strict_read: impl Fn(&[u8]) -> bool) {
     let recorded = raw_sha256(bytes);
-    assert_eq!(raw_sha256(bytes), recorded, "digest must be reproducible");
     let mut corrupted = bytes.to_vec();
     let flip_at = corrupted.len() / 2;
     corrupted[flip_at] ^= 0xFF;
@@ -74,18 +75,31 @@ fn assert_replayable(bytes: &[u8]) {
         recorded,
         "a corrupted fixture must not silently share the recorded digest"
     );
+    assert!(
+        !strict_read(&corrupted),
+        "a fixture whose bytes disagree with its recorded digest must be a typed refusal, \
+         not silently accepted by strict-read"
+    );
 }
 
 /// Derives, evaluates, and maps `input` through this crate's real
 /// `derive`/`evaluate`/`read`/`map` paths (both temporal lanes share this
-/// one owner boundary), checking each emitted document's recorded digest
-/// along the way, and returns only the re-derived mapped outcome for the
-/// caller to compare against its own hand-derived expectation.
+/// one owner boundary), proving each emitted document's replay-corruption
+/// detection along the way, and returns only the re-derived mapped outcome
+/// for the caller to compare against its own hand-derived expectation.
 fn evaluate_and_map(input: request::RequestInput<'_>, limits: OwnerLimits) -> MappedOutcome {
     let request = admit_request(input, limits);
     let result_document =
         report::evaluate(&request, report::ResultRelationInput::Original, limits).unwrap();
-    assert_replayable(result_document.bytes());
+    assert_replay_detects_corruption(result_document.bytes(), |candidate| {
+        report::read(
+            candidate,
+            &request,
+            report::ResultRelationInput::Original,
+            limits,
+        )
+        .is_ok()
+    });
     let result = report::read(
         result_document.bytes(),
         &request,
@@ -95,7 +109,9 @@ fn evaluate_and_map(input: request::RequestInput<'_>, limits: OwnerLimits) -> Ma
     .unwrap();
     let selection = MappingSelection::for_result(&result);
     let mapping_document = contract_ir::map(&result, &selection, limits).unwrap();
-    assert_replayable(mapping_document.bytes());
+    assert_replay_detects_corruption(mapping_document.bytes(), |candidate| {
+        contract_ir::read(candidate, &result, &selection, limits).is_ok()
+    });
     let mapping = contract_ir::read(mapping_document.bytes(), &result, &selection, limits).unwrap();
     mapping.outcome()
 }
@@ -663,11 +679,12 @@ fn tc_087_resource_boundary_at_ceiling() {
         ..OwnerLimits::default()
     };
     let outcome = evaluate_and_map(input, at_ceiling);
-    // p0 present at position 0, negated -> false at position 0, but the
-    // trace is closed so the whole-trace evaluation still yields a Boolean;
-    // the fixture only needs to prove admission at the ceiling, so accept
-    // either Boolean value and assert it settled rather than refusing.
-    assert!(matches!(outcome, MappedOutcome::Value { .. }));
+    // Hand-derived expectation: `p0` is present at position 0 (anchor 0),
+    // so `Not(p0)` is false there; the trace is closed, so the closed-scope
+    // truth is exactly that position-0 valuation: false. The fixture proves
+    // both that admission succeeds exactly at the two-node/depth-two
+    // ceiling *and* that the ceiling changes no semantic outcome.
+    assert_eq!(outcome, MappedOutcome::Value { value: false });
 }
 
 /// Covers: resource-boundary/one-over-ceiling, execution-truth/resource-incomplete,
@@ -1030,4 +1047,117 @@ fn tc_087_census_report_carries_population_exclusions_blocked_and_revisions() {
     assert!(manifest.contains(report.measured_revisions.tl_mltl));
     assert!(manifest.contains(report.measured_revisions.tl_syntax));
     assert!(manifest.contains(report.measured_revisions.quire_observation));
+}
+
+// Trace: TC-087, FR-005-AC-6
+#[test]
+fn tc_087_no_spec_or_test_file_embeds_a_quire_contract_ir_schema_vocabulary_or_fixture() {
+    // Deliberately scoped to `spec/` and `tests/`, exactly as FR-005-AC-6
+    // states -- not `schemas/`, which legitimately holds this crate's *own*
+    // checked-in JSON Schema documents (`request`/`report`/`contract_ir`),
+    // never `quire-contract-ir`'s.
+    let mut files = Vec::new();
+    for root in ["spec", "tests"] {
+        collect_files(
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(root),
+            &mut files,
+        );
+    }
+    assert!(
+        files.len() >= 15,
+        "sanity: expected to find the real spec/tests tree"
+    );
+
+    for path in &files {
+        let bytes = std::fs::read(path).unwrap();
+        let Ok(text) = std::str::from_utf8(&bytes) else {
+            continue;
+        };
+        let is_rust_source = path.extension().and_then(|ext| ext.to_str()) == Some("rs");
+        if !is_rust_source {
+            // Every current file under spec/tests is markdown or Rust; a
+            // non-Rust file here (a `.json` fixture, most plausibly) is
+            // exactly the shape an embedded schema, vocabulary table, or
+            // fixture body would take, so any such key is refused outright.
+            for marker in ["\"$schema\"", "\"additionalProperties\"", "\"$defs\""] {
+                assert!(
+                    !text.contains(marker),
+                    "{path:?} contains {marker:?}, which reads as an embedded JSON \
+                     Schema document -- quire-mltl's own schemas live under schemas/, \
+                     never spec/ or tests/, and no upstream schema may be copied in \
+                     either"
+                );
+            }
+            continue;
+        }
+        // Rust source may legitimately reference these key names as string
+        // literals inside validation logic (see `support::assert_closed_schema`,
+        // which inspects *this crate's own* checked-in schemas). What it may
+        // never do is pull bytes in from outside this crate's own tree. This
+        // very file is excluded: its own source text names the macros it is
+        // searching for, as a string to search for rather than a call, which
+        // a literal substring scan cannot tell apart from a real one.
+        if path.file_name().and_then(|name| name.to_str())
+            == Some("tc_087_native_correspondence_census.rs")
+        {
+            continue;
+        }
+        for (line_number, line) in text.lines().enumerate() {
+            let Some(macro_at) = line
+                .find("include_str!(")
+                .or_else(|| line.find("include_bytes!("))
+            else {
+                continue;
+            };
+            let after = &line[macro_at..];
+            assert!(
+                after.contains("Cargo.toml") || after.contains("Cargo.lock"),
+                "{path:?}:{} includes bytes from an unexpected source -- every \
+                 include_str!/include_bytes! under tests/ must name only this \
+                 crate's own Cargo.toml/Cargo.lock, never a schema, vocabulary, or \
+                 fixture file",
+                line_number + 1
+            );
+        }
+    }
+}
+
+/// Every `quire-contract-ir` reference this crate carries is a *bounded
+/// identity record* (a contract label plus this crate's own schema digest,
+/// as short text), never a vocabulary table or fixture body copied out of
+/// `quire-contract-ir` -- proven directly by bounding every field's length,
+/// rather than by scanning file text for a marker that might not appear.
+// Trace: TC-087, FR-005-AC-6
+#[test]
+fn tc_087_counterpart_contract_fields_are_bounded_identity_text_not_a_schema_body() {
+    const MAX_IDENTITY_TEXT_BYTES: usize = 200;
+    for entry in census::REGISTRY {
+        if let ClassState::Applicable(class) = entry.state {
+            if let Some(counterpart) = class.counterpart {
+                assert!(counterpart.label.len() <= MAX_IDENTITY_TEXT_BYTES);
+                assert!(counterpart.exchanged_contract.len() <= MAX_IDENTITY_TEXT_BYTES);
+                assert_eq!(
+                    counterpart.exchanged_schema_sha256.len(),
+                    64,
+                    "the exchanged-document digest must be exactly one SHA-256, not a \
+                     schema body"
+                );
+                assert!(counterpart.provenance.len() <= MAX_IDENTITY_TEXT_BYTES);
+            }
+        }
+    }
+}
+
+fn collect_files(dir: std::path::PathBuf, out: &mut Vec<std::path::PathBuf>) {
+    let Ok(entries) = std::fs::read_dir(&dir) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            collect_files(path, out);
+        } else {
+            out.push(path);
+        }
+    }
 }
