@@ -9,6 +9,7 @@
 
 #![warn(missing_docs)]
 
+pub mod census;
 pub mod contract_ir;
 pub mod dispatch;
 pub mod report;

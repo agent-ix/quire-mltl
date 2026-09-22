@@ -218,6 +218,20 @@ impl ValidatedTemporalResult {
         self.wire.request.identity()
     }
 
+    /// Native subject identity, carried verbatim from the originating
+    /// request (FR-004-AC-3).
+    #[must_use]
+    pub fn subject_identity(&self) -> &str {
+        &self.wire.subject_identity
+    }
+
+    /// Native/TL correspondence identity, carried verbatim from the
+    /// originating request (FR-004-AC-3).
+    #[must_use]
+    pub fn correspondence_identity(&self) -> &str {
+        &self.wire.correspondence_identity
+    }
+
     /// Assessment execution state.
     #[must_use]
     pub const fn execution(&self) -> AssessmentExecution {
