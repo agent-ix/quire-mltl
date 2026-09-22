@@ -1,0 +1,32 @@
+[licenses]
+version = 2
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Unicode-3.0",
+    "AGPL-3.0-only",
+    "AGPL-3.0-or-later",
+]
+confidence-threshold = 0.9
+
+[bans]
+multiple-versions = "allow"
+wildcards = "warn"
+
+[advisories]
+version = 2
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+# Exact owner revisions are pinned in Cargo.toml and Cargo.lock. quire-mltl is
+# the one deliberate integration crate bridging tl-mltl's TL-owned evaluation
+# types to quire-observation's owner-assertion views, per the architect ruling
+# under agent-ix/quire-research (TL-175). filament-core-data supplies the dev-
+# only baseline producer tl-mltl's own dev-dependencies already pull in.
+allow-git = [
+    "https://github.com/agent-ix/tl-mltl",
+    "https://github.com/agent-ix/filament-core-data",
+    "https://github.com/agent-ix/tl-syntax.git",
+    "https://github.com/agent-ix/quire-observation",
+]

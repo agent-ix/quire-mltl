@@ -1,0 +1,28 @@
+[package]
+name = "quire-mltl"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.98"
+description = "Bridges tl-mltl's TL-owned evaluation types to quire-observation's owner-assertion views. The one deliberate exception to tl-mltl's independence from the agent-ix/Quire ecosystem."
+authors = ["Peter Krenesky <kreneskyp@gmail.com>"]
+license = "AGPL-3.0-only"
+repository = "https://github.com/agent-ix/quire-mltl"
+
+[lib]
+name = "quire_mltl"
+path = "src/lib.rs"
+
+[dependencies]
+# Pre-declared for the TL-178 port. Nothing in src/ uses these yet; this
+# ticket (TL-176) is scaffolding only. `#![allow(unused_crate_dependencies)]`
+# in src/lib.rs keeps that honest instead of fighting clippy over it.
+tl-mltl = { version = "=0.1.0", git = "https://github.com/agent-ix/tl-mltl", rev = "b3e2a26a8516b0747679214d2a05be0210e69ec6" }
+quire-observation = { version = "=0.1.0", git = "https://github.com/agent-ix/quire-observation", rev = "2bdeb833a330bfa777c19eb4c28c423f856f3ba6" }
+tl-syntax = { version = "=0.1.0", git = "https://github.com/agent-ix/tl-syntax.git", rev = "d52d89549b0a6c0c429261bab912cd5396c4a19e", default-features = false, features = ["alloc", "serde"] }
+
+[dev-dependencies]
+agent-ix-baseline-producer = { version = "=0.0.0", git = "https://github.com/agent-ix/filament-core-data", rev = "a6fe662542770e6acbec4917cfe1772b349ee414" }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
