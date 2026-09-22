@@ -31,11 +31,10 @@ while iterating and dispatch hosted CI only for a finalized revision.
 
 ## License
 
-Licensed under `AGPL-3.0-only`. This is a deliberate departure from this
-org's usual `AGPL-3.0-or-later` default: `quire-mltl` directly incorporates
-`quire-observation`, which is itself `AGPL-3.0-only`. Combining mismatched
-GPL-family terms follows the most restrictive included term, so `-or-later`
-would misrepresent the actual right granted to downstream users. See
+Licensed under `AGPL-3.0-or-later`, this org's default for `quire-*` program
+repositories. `quire-mltl` directly incorporates `quire-observation`, which
+is itself `AGPL-3.0-or-later` as of its 2026-09-13 relicense, so nothing in
+this crate's dependency graph requires a narrower term. See
 `LICENSE-DECISION.md`.
 
 Registry publication is disabled (`publish = false`) until a v0.1 assurance

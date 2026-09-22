@@ -5,8 +5,9 @@ edition = "2021"
 rust-version = "1.98"
 description = "Bridges tl-mltl's TL-owned evaluation types to quire-observation's owner-assertion views. The one deliberate exception to tl-mltl's independence from the agent-ix/Quire ecosystem."
 authors = ["Peter Krenesky <kreneskyp@gmail.com>"]
-license = "AGPL-3.0-only"
+license = "AGPL-3.0-or-later"
 repository = "https://github.com/agent-ix/quire-mltl"
+publish = false
 
 [lib]
 name = "quire_mltl"

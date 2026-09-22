@@ -57,9 +57,8 @@ Mirrors `tl-mltl`'s own scaffolding:
 
 ## License
 
-`AGPL-3.0-only`, not this org's usual `AGPL-3.0-or-later` — a deliberate
-choice because `quire-observation` (an `AGPL-3.0-only` dependency) is
-incorporated directly. See `LICENSE-DECISION.md`.
+`AGPL-3.0-or-later`, this org's default for `quire-*` program repositories.
+See `LICENSE-DECISION.md`.
 
 ## Layout
 
