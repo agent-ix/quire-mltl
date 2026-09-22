@@ -897,7 +897,7 @@ fn tc_084_future_and_past_requests_evaluate_and_strict_read() {
     assert!(past.is_final());
 }
 
-// Trace: TC-084, FR-001-AC-2, FR-001-AC-4, FR-001-AC-9
+// Trace: TC-084, FR-001-AC-2, FR-001-AC-4
 #[test]
 fn tc_084_all_profiles_past_operators_and_supported_clocks_use_one_owner_path() {
     let decision = owner_views("decision-profiles", 2);
@@ -1143,6 +1143,44 @@ fn tc_084_all_profiles_past_operators_and_supported_clocks_use_one_owner_path() 
     )
     .unwrap();
     assert_eq!(fixed_result.truth(), report::TemporalTruth::Satisfied);
+}
+
+// Trace: TC-084, FR-001-AC-9
+#[test]
+fn tc_084_past_lane_refuses_mismatched_clock_binding() {
+    // An `EventPosition` clock paired with a `FixedSample`-bound history is
+    // neither of the two pairings FR-001-AC-9 admits (`EventPosition`/
+    // `EventPosition` or an exactly-agreeing `FixedSample`/`FixedSample`), so
+    // it must be refused with `ExpectedMismatch("clockBinding")` rather than
+    // silently evaluated.
+    let decision = owner_views("decision-clock-binding-mismatch", 2);
+    let surrounding = owner_views("surrounding-clock-binding-mismatch", 2);
+    let propositions = proposition_map();
+    let formula = past_formula();
+    let mismatched_history_value = fixed_history_document("history:clock-binding-mismatch");
+    let mismatched_history = admit_history(&mismatched_history_value);
+    let input = request::RequestInput {
+        formula: &formula,
+        proposition_map: &propositions,
+        input: request::TemporalInput::Past(&mismatched_history),
+        clock: &decision.clock,
+        subject_identity: "native-subject:clock-binding-mismatch",
+        correspondence_identity: "native-tl-correspondence:clock-binding-mismatch",
+        anchor: 1,
+        observations: observations(
+            &decision,
+            &surrounding,
+            true,
+            true,
+            true,
+            true,
+            &decision.completeness_complete,
+            &decision.availability_available,
+        ),
+    };
+    let error = request::derive(input, OwnerLimits::default()).unwrap_err();
+    assert_eq!(error.code(), OwnerReadErrorCode::ExpectedMismatch);
+    assert_eq!(error.field(), "clockBinding");
 }
 
 // Trace: TC-084, FR-001-AC-7, NFR-001-AC-1
