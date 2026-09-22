@@ -99,6 +99,9 @@ version = "0.1.0"
 dependencies = [
  "agent-ix-baseline-producer",
  "quire-observation",
+ "serde",
+ "serde_json",
+ "sha2",
  "tl-mltl",
  "tl-syntax",
 ]
