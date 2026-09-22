@@ -8,13 +8,20 @@ integration crate may bridge them).
 
 ## Current state
 
-Freshly scaffolded (TL-176). No bridging implementation yet — `src/lib.rs` is
-a placeholder. `Cargo.toml` pre-declares and pins the `tl-mltl`,
-`quire-observation`, and `tl-syntax` dependencies, plus the
-`agent-ix-baseline-producer` dev-dependency, so the implementation ticket
-(TL-178) doesn't have to redo this step. `spec/` is structurally seeded, not
-populated — real FR/NFR/MRS content is TL-177. Do not port wire/mapping code
-here before TL-178 is picked up.
+TL-176 scaffolded the repository, TL-177 authored MRS-001/FR-001..FR-003/
+NFR-001/ADR-001, and TL-178 landed the port: `src/{request,report,dispatch,
+contract_ir}.rs` carry `tl-mltl`'s former `wire::request`, `wire::report`,
+`wire::observation` (renamed `dispatch`) and `mapping::contract_ir` modules.
+`Cargo.toml` pins exact `tl-mltl`, `quire-observation` and `tl-syntax` source
+revisions plus the `agent-ix-baseline-producer` dev-dependency.
+
+FR-004 and FR-005 add the native-correspondence dimension: identity
+preservation across the three documents, a typed refusal for a class this
+crate cannot represent, and a closed correspondence-class census. They are
+specification only — no implementation yet. ADR-002 records why that dimension
+is here and why this crate is the *supplier* to `quire-contract-ir` FR-026,
+not its consumer. **This crate takes no `quire-contract-ir` dependency**; one
+would close a cycle with TL-181.
 
 ## Commands
 

@@ -79,6 +79,14 @@ governance posture correctly.
 - The strict reading, canonical-bytes, content-identity, and bounded-resource
   discipline `tl-mltl`'s existing owner boundary established, applied to the
   four ported contracts.
+- Lossless preservation of the native subject and correspondence identities a
+  request carries, across the request, the result and the Contract-IR mapping,
+  with a typed non-value for any correspondence class this crate cannot
+  represent and a successor-label rule on the three contracts a consumer
+  admits by identity.
+- A closed, reviewed census of the native-correspondence classes the bridge
+  carries losslessly, with one canonical fixture and one independently derived
+  expected outcome per applicable class and exact-digest replay.
 
 ### Out of Scope
 
@@ -93,6 +101,11 @@ governance posture correctly.
 - Contract-IR vocabulary, parsers, evaluators, Boolean coercion helpers,
   callbacks, or trust flags — the mapping accepts no caller-supplied result
   fields and owns no Contract-IR wire type of its own.
+- The native Quire grammar, checked-predicate semantics, signal-catalog
+  derivation, clock/history correspondence derivation, and the native/TL
+  agreement decision. Those are `quire-contract-ir`'s under FR-025 and FR-026,
+  and `quire-spec-language`'s for the native source itself. `quire-mltl` is
+  their supplier, not their consumer, and takes no dependency on either.
 - `tl-mltl`'s other owner contracts (`trace`, `command`, and the legacy
   aliases) and CLI surface, which are not part of the TL-178 port and remain
   in `tl-mltl` only.
@@ -118,8 +131,29 @@ FR-001 owns temporal-assessment request derivation, strict reading, and
 result evaluation. FR-002 owns the QObs C00 compatibility dispatch boundary
 and depends on FR-001 for its one supported branch. FR-003 owns the
 Contract-IR result mapping and depends on FR-001 for the validated result it
-maps. NFR-001 constrains this crate's governance, provenance, and
-qualification boundary under PGM-01.
+maps. FR-004 owns native-correspondence identity preservation, the typed
+refusal of an unrepresentable class, and contract-label stability across all
+three documents. FR-005 owns the closed correspondence-class census and its
+exact-digest replay. NFR-001 constrains this crate's governance, provenance,
+and qualification boundary under PGM-01.
+
+### Why the native-correspondence dimension is here
+
+`quire-contract-ir` FR-026 owns the native/TL correspondence, constructs the
+TL artifacts for a profile — including the request — and joins a
+`TlMappedResultView`. Under
+[ADR-001](./decisions/ADR-001-tl-crates-stay-quire-independent-quire-mltl-bridges.md),
+TL-181 repoints exactly those imports to `quire_mltl::*`. So
+`quire-contract-ir` is this crate's consumer, and the unspecified half of that
+boundary was the *counterparty* obligation: that the documents FR-026
+constructs and reads carry the correspondence losslessly and refuse legibly.
+That obligation belongs to the crate that owns those documents.
+
+It was previously specified in `tl-mltl`'s M4 corpus campaign as a `tl-mltl`
+lane with `producer_repository: agent-ix/quire-contract-ir` — wrong repository
+under ADR-001, and wrong direction besides. FR-004 and FR-005 are its
+correctly-scoped replacement; see
+[ADR-002](./decisions/ADR-002-quire-mltl-owns-the-native-correspondence-dimension.md).
 
 ## References
 
@@ -144,3 +178,15 @@ qualification boundary under PGM-01.
   as they exist today, not at artifacts that stay frozen.
 - [PGM-01](https://github.com/agent-ix/quire-contract-ir/blob/main/spec/program/PGM-01-governance.md)
   governs this crate directly.
+- `quire-contract-ir`
+  [FR-025](https://github.com/agent-ix/quire-contract-ir/blob/main/spec/contract/FR-025-native-predicate-tl-projection.md)
+  and
+  [FR-026](https://github.com/agent-ix/quire-contract-ir/blob/main/spec/contract/FR-026-native-temporal-tl-correspondence.md)
+  own the native predicate projection and the native/TL temporal
+  correspondence this crate supplies the TL side of. Their specification
+  tickets, `quire-contract-ir` #63 and #64, have both closed; implementation is
+  #70 and #71.
+- `tl-mltl`
+  [ADR-002](https://github.com/agent-ix/tl-mltl/blob/main/spec/decisions/ADR-002-native-correspondence-lives-in-quire-mltl.md)
+  records the other half of this relocation: the removal of the same dimension
+  from `tl-mltl`'s M4 corpus campaign.
