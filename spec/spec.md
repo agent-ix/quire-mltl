@@ -186,7 +186,6 @@ correctly-scoped replacement; see
   correspondence this crate supplies the TL side of. Their specification
   tickets, `quire-contract-ir` #63 and #64, have both closed; implementation is
   #70 and #71.
-- `tl-mltl`
-  [ADR-002](https://github.com/agent-ix/tl-mltl/blob/main/spec/decisions/ADR-002-native-correspondence-lives-in-quire-mltl.md)
-  records the other half of this relocation: the removal of the same dimension
-  from `tl-mltl`'s M4 corpus campaign.
+- `tl-mltl` is dropping the same dimension from its M4 corpus campaign in its
+  own ADR-002 (see [agent-ix/tl-mltl#86](https://github.com/agent-ix/tl-mltl/pull/86),
+  pending merge as of 2026-09-21), the other half of this relocation.

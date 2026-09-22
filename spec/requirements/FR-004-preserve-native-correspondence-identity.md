@@ -86,17 +86,31 @@ subject and correspondence to match exactly. This requirement adds that a
 correction chain SHALL NOT change either identity at any revision: a
 correspondence is not re-pointed by superseding a result.
 
-### An unrepresentable class refuses legibly
+### An unrepresentable class refuses legibly, on one of two surfaces
 
-Some correspondence classes cannot be carried by this crate's contracts. A
-timestamped-event clock family is the concrete case FR-001 already refuses as
-unsupported; a past-lane request whose clock range family disagrees with the
-history's own binding is another. For every such class quire-mltl SHALL emit a
-typed non-value naming the exact dimension refused — clock family, clock
-binding, semantic profile, lane, proposition coverage, or resource ceiling —
-and SHALL NOT emit a Boolean, a `Pending`, a defaulted value, or a partial
-document. A refusal is an outcome the consumer records; it is never a gap the
-consumer has to infer from an absent reply.
+Some correspondence classes cannot be carried by this crate's contracts, and
+this crate refuses them on two structurally different surfaces depending on
+when the class is discovered.
+
+**Read-time.** A timestamped-event clock family, and a past-lane request whose
+clock range family disagrees with the history's own binding, are both
+discovered while `derive`/`read` strict-reads the request — before any result
+or mapping document exists. Both refuse as a typed `OwnerReadError` naming the
+disagreeing field (`ExpectedMismatch`), and an over-ceiling resource case
+discovered at the same stage refuses as a typed `OwnerReadError`
+(`ResourceIncomplete`). No partial document is produced in either case: there
+is nothing yet to carry a non-value.
+
+**Evaluation-time.** A class discovered only once evaluation runs — an
+unsupported semantic profile or past node, a resource ceiling crossed during
+evaluation, or a lane the evaluator cannot carry — surfaces in the emitted
+result and mapping as a typed `NonValueKind` naming the exact dimension
+refused (`Unsupported`, `ResourceIncomplete`, or the matching typed kind), and
+SHALL NOT be emitted as a Boolean, a `Pending`, a defaulted value, or silently
+dropped.
+
+Either way, a refusal is an outcome the consumer records; it is never a gap
+the consumer has to infer from an absent reply.
 
 This crate does not invent a representation for a refused class. A class that
 ought to be representable and is not is a specification finding for whichever
@@ -133,9 +147,10 @@ inside a request, and the crate's dependency graph stays `tl-mltl`,
 | FR-004-AC-2 | Both identities are inside the request's content-identity preimage: two requests identical except for the correspondence identity produce different request identities, and every result and mapping identity derived from them differs accordingly. | Test |
 | FR-004-AC-3 | The emitted result and the emitted Contract-IR mapping both carry the native subject and correspondence identities of the originating request byte-identically; a mapping or result whose embedded identities disagree with its source is refused with `ExpectedMismatch` rather than corrected. | Test |
 | FR-004-AC-4 | A correction chain preserves both identities unchanged at every revision; a superseding or invalidating result that would change either identity is refused. | Test |
-| FR-004-AC-5 | Every correspondence class this crate cannot represent — including at least an unsupported clock family, a disagreeing past-lane clock binding, an incompatible semantic profile or lane, and an over-ceiling resource case — yields a typed non-value naming the exact refused dimension, and never a Boolean, a pending truth, a defaulted value, or a partial document. | Test |
-| FR-004-AC-6 | A strict reader refuses a document whose contract label is unknown or is not the label the reader selected, and the field set, canonical byte form, and identity preimage of each of the three contracts are pinned by a test that fails when any of them changes without a successor label. | Test |
-| FR-004-AC-7 | No public operation accepts a native grammar, predicate parser or evaluator, catalog derivation, correspondence derivation, agreement decision, Boolean coercion, callback, plugin, or trust flag, and the crate manifest declares no `quire-contract-ir` dependency. | Test |
+| FR-004-AC-5 | Every read-time-refused correspondence class — including at least an unsupported clock family and a disagreeing past-lane clock binding — is refused during `derive`/`read`, before any result or mapping document exists, as a typed `OwnerReadError` naming the disagreeing field, and produces no partial document; an over-ceiling resource case discovered at read time is likewise refused as a typed `OwnerReadError` and never as a `NonValueKind`. | Test |
+| FR-004-AC-6 | Every evaluation-time-refused correspondence class — including at least an incompatible semantic profile or lane and an over-ceiling resource case discovered during evaluation — yields a typed `NonValueKind` in the emitted result and mapping naming the exact refused dimension, and never a Boolean, a pending truth, a defaulted value, or a silently dropped outcome. | Test |
+| FR-004-AC-7 | A strict reader refuses a document whose contract label is unknown or is not the label the reader selected, and the field set, canonical byte form, and identity preimage of each of the three contracts are pinned by a test that fails when any of them changes without a successor label. | Test |
+| FR-004-AC-8 | No public operation accepts a native grammar, predicate parser or evaluator, catalog derivation, correspondence derivation, agreement decision, Boolean coercion, callback, plugin, or trust flag, and the crate manifest declares no `quire-contract-ir` dependency. | Test |
 
 ## Dependencies
 
