@@ -35,11 +35,14 @@ logic.
 
 ## Outputs
 
-- For `TemporalAssessment`, a `Compatibility::Supported` disposition naming
-  the exact wire-contract label and the exact compiled `quire-observation`
-  revision this crate's `Cargo.toml` pins, plus (on dispatch) the
+- For `TemporalAssessment`, `compatibility` returns a `Compatibility::Supported`
+  disposition naming the exact wire-contract label and the exact compiled
+  `quire-observation` revision this crate's `Cargo.toml` pins. This is a
+  separate call from dispatch itself: when the caller also dispatches the
+  temporal handoff, `consume_temporal` independently produces the
   byte-identical `TemporalRequestDocument` a direct `request::derive` call
-  would produce for the same inputs and limits.
+  would produce for the same inputs and limits — `compatibility` never
+  carries or returns that document itself.
 - For `RepairPlan` or `ClosedPopulationQuery`, a `Compatibility::Unsupported`
   disposition naming the exact foreign QObs contract label
   (`quire.observation.repair-plan/v1` or
@@ -67,14 +70,24 @@ logic.
   substitute a compatible range, ambient checkout, ingestion order, or a
   TL-owned reconstruction of QObs-owned semantics.
 - Every supported and unsupported disposition names the same exact compiled
-  `quire-observation` revision exported by this crate; the crate's Cargo
-  resolution and this exported revision constant name the same commit.
+  `quire-observation` revision exported by this crate. `dispatch`'s exported
+  revision constant is re-derived from `quire-mltl`'s own `Cargo.toml`/
+  `Cargo.lock` `quire-observation` pin at port time (TL-178); it is not copied
+  forward from `tl-mltl`'s existing `QUIRE_OBSERVATION_REVISION` constant,
+  which as of `tl-mltl@b3e2a26` has drifted from `tl-mltl`'s own Cargo pin
+  (`Cargo.toml` pins `quire-observation` at `2bdeb833a330bfa777c19eb4c28c423f856f3ba6`
+  since commit `7638e2c` re-pinned it, but the constant in `src/lib.rs` still
+  reads the pre-re-pin `924006300f45b38483be1cbdf99b68f899b7d368`). Because
+  this constant is re-derived rather than ported, `quire-mltl`'s Cargo
+  resolution and its exported revision constant name the same commit as an
+  outcome of the port, not as an invariant already holding in the source
+  being ported.
 
 ## Constraints
 
 | ID | Constraint | Type | Validation |
 |---|---|---|---|
-| FR-002-CON-1 | The `quire-observation` Cargo dependency pin and the revision constant exported by `dispatch` name the same exact commit. | Provenance | Test |
+| FR-002-CON-1 | The revision constant `dispatch` exports for `quire-observation` is re-derived from `quire-mltl`'s own `Cargo.toml`/`Cargo.lock` pin at port time, not copied forward from `tl-mltl`'s existing (stale) constant; the resulting constant and the Cargo dependency pin name the same exact commit. | Provenance | Test |
 | FR-002-CON-2 | Unsupported repair-plan and closed-population-query dispatch never expose a Boolean, aggregate, repaired result, or partial temporal document. | Integrity | Test |
 
 ## Acceptance Criteria
@@ -83,7 +96,7 @@ logic.
 |---|---|---|
 | FR-002-AC-1 | Given valid temporal owner views, `consume_temporal` produces bytes and resource usage identical to a direct FR-001 request-derivation call for the same inputs and limits, under both exact and one-over limits. | Test |
 | FR-002-AC-2 | Given the `RepairPlan` or `ClosedPopulationQuery` selector, `compatibility` returns the corresponding typed `Unsupported` disposition and exact compiled `quire-observation` revision, with no value-bearing or artifact input/output at any point. | Test |
-| FR-002-AC-3 | Cargo resolution, the exported revision constant, and every supported/unsupported disposition all name the same exact `quire-observation` commit. | Test |
+| FR-002-AC-3 | `quire-mltl`'s Cargo resolution and its exported revision constant, re-derived from this crate's own Cargo pin at port time rather than propagated from `tl-mltl`'s current constant, name the same exact `quire-observation` commit; every supported/unsupported disposition reports that re-derived value. | Test |
 
 ## Dependencies
 

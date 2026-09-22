@@ -15,13 +15,17 @@ relationships:
 ## Status
 
 **Accepted** — architect ruling recorded against Linear epic
-[TL-175](https://github.com/agent-ix/tl-mltl/issues/7). TL-176 scaffolded
+[TL-175](https://linear.app/agent-ix/issue/TL-175). TL-176 scaffolded
 this repository as the ruling's bridge crate; this document (TL-177) records
 the decision itself. TL-178 performs the wholesale port of `tl-mltl`'s
 `wire::request`, `wire::observation` (as `dispatch`), `wire::report`, and
-`mapping::contract_ir` modules into this crate; TL-180 removes `tl-mltl`'s
-`quire-observation` dependency and its `ix://agent-ix/quire-contract-ir/PGM-01`
-citation, completing `tl-mltl`'s independence.
+`mapping::contract_ir` modules into this crate; TL-179 removes `tl-mltl`'s
+`quire-observation` dependency and rewrites its FR-018 to a generic owner
+boundary; TL-180 removes `tl-mltl`'s `ix://agent-ix/quire-contract-ir/PGM-01`
+citation (MRS-001's `depends_on` edge and NFR-002's PGM-01 reference) and
+retires FR-019, completing `tl-mltl`'s independence. TL-181 repoints
+`quire-contract-ir`'s own imports and schema catalog from `tl-mltl` to
+`quire-mltl`, completing the consumer side of this decision.
 
 ## Context
 
@@ -52,11 +56,18 @@ crate that depends on both `tl-mltl` and `quire-observation` (plus
 
 - `tl-mltl`'s `wire::request`, `wire::observation` (renamed `dispatch`),
   `wire::report`, and `mapping::contract_ir` modules move to `quire-mltl`
-  unchanged in behavior (TL-178). `tl-mltl` retains only its own
-  future/past evaluation semantics, horizon analysis, and the wire contracts
-  that carry no `quire-observation` type (`trace`, `command`, legacy
-  aliases).
-- `tl-mltl` drops its `quire-observation` dependency and its
+  unchanged in behavior (TL-178), with one deliberate exception: the
+  `observationRevision` wire field's exported revision constant is re-derived
+  from `quire-mltl`'s own Cargo pin at port time rather than carried forward
+  from `tl-mltl`'s existing `QUIRE_OBSERVATION_REVISION` constant, which has
+  drifted from `tl-mltl`'s own Cargo pin since commit `7638e2c` re-pinned the
+  dependency without updating the constant (see
+  [FR-001](../requirements/FR-001-admit-temporal-assessment-requests-and-results.md)
+  and [FR-002](../requirements/FR-002-dispatch-qobs-c00-compatibility.md)).
+  `tl-mltl` retains only its own future/past evaluation semantics, horizon
+  analysis, and the wire contracts that carry no `quire-observation` type
+  (`trace`, `command`, legacy aliases).
+- `tl-mltl` drops its `quire-observation` dependency (TL-179) and its
   `ix://agent-ix/quire-contract-ir/PGM-01` citation (TL-180), becoming an
   ordinary Rust crate usable by, but not part of, the Quire ecosystem.
 - `quire-mltl` takes on both the `quire-observation` dependency and the
@@ -84,6 +95,15 @@ crate that depends on both `tl-mltl` and `quire-observation` (plus
 - A consumer that specifically needs the QObs-bridged temporal-assessment
   contract, the compatibility dispatch, or the Contract-IR mapping now
   depends on `quire-mltl`, not `tl-mltl`, for that surface.
+- `quire-contract-ir` is exactly that consumer: TL-181 repoints its
+  `src/temporal/request.rs`, `correspondence.rs`, `join.rs`, `reader.rs`, and
+  schema-catalog entries from `tl_mltl::wire::*`/`tl_mltl::mapping::contract_ir::*`
+  to `quire_mltl::*`, and updates its own `PGM-01-governance.md`,
+  `FR-026`, and `FR-028` to reflect the new boundary. This is the
+  consumer-side half of this decision; `quire-contract-ir` keeps its direct
+  `tl-mltl` and `quire-observation` dependencies for the lower-level joins
+  that remain its own domain job, gaining no new higher-level API from
+  `quire-mltl`.
 - `quire-mltl`'s `Cargo.toml` directly pins exact `tl-mltl`,
   `quire-observation`, and `tl-syntax` source revisions; only this crate
   needs to be re-reviewed and repinned when either upstream's Quire-facing

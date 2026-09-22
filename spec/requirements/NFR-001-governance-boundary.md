@@ -5,7 +5,7 @@ type: NFR
 quality_attribute: compliance
 relationships:
   - target: ix://agent-ix/quire-contract-ir/PGM-01
-    type: references
+    type: depends_on
 ---
 # NFR-001: Retain governance and qualification boundaries
 

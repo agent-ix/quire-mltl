@@ -19,7 +19,7 @@ quire-mltl bridges `tl-mltl`'s TL-owned temporal evaluation types to
 `quire-observation`'s owner-assertion views. It is the one deliberate
 exception to `tl-mltl`'s independence from the agent-ix/Quire ecosystem: an
 architect ruling (Linear epic
-[TL-175](https://github.com/agent-ix/tl-mltl/issues/7)) requires every TL-*
+[TL-175](https://linear.app/agent-ix/issue/TL-175)) requires every TL-*
 crate to stay independent of Quire, with only a dedicated integration crate
 permitted to bridge them. `quire-mltl` exists so `tl-mltl` itself never has to
 depend on, or know about, `quire-observation`.
@@ -42,7 +42,9 @@ incorporates `quire-observation` (a Quire-governed observation boundary) and
 exists specifically to hand Quire-shaped evidence — Contract-IR mappings,
 owner-assertion-qualified temporal results — back into the ecosystem. It is
 not an ordinary consumer of Quire types; it is the load-bearing seam between a
-Quire-independent evaluator and Quire's own observation authority. PGM-01 at
+Quire-independent evaluator and Quire's own observation authority. Under PGM-01-R07's component/artifact
+classification criterion, that seam role makes `quire-mltl` itself a
+Quire-owned program repository, not merely a consumer of one; PGM-01 at
 `ix://agent-ix/quire-contract-ir/PGM-01` therefore governs this crate's
 compatibility, provenance, evidence, human authority, and qualification
 boundaries directly, the same way it would govern any other Quire-owned
@@ -121,7 +123,7 @@ qualification boundary under PGM-01.
 
 ## References
 
-- [Linear epic TL-175](https://github.com/agent-ix/tl-mltl/issues/7) — TL-*
+- [Linear epic TL-175](https://linear.app/agent-ix/issue/TL-175) — TL-*
   crates stay independent of the Quire ecosystem; `quire-mltl` is the one
   dedicated bridge.
 - TL-176 scaffolded this repository; TL-177 (this specification) precedes
@@ -133,7 +135,12 @@ qualification boundary under PGM-01.
   and
   [FR-019](https://github.com/agent-ix/tl-mltl/blob/main/spec/requirements/FR-019-consume-qobs-c00.md)
   describe this same wire boundary as it exists today in `tl-mltl`, before the
-  port; they are retained there as historical/behavioral context and are not
-  edited by this ticket.
+  port. Neither is retained unedited: TL-179 rewrites FR-018 to describe a
+  generic TL-owned assertion boundary once `tl-mltl` drops its
+  `quire-observation` dependency, and TL-180 retires FR-019
+  (`status: superseded`) once that consumption path moves to this crate's
+  FR-002. This ticket (TL-177) does not itself edit either file — those edits
+  land under TL-179/TL-180 — but the References above point at FR-018/FR-019
+  as they exist today, not at artifacts that stay frozen.
 - [PGM-01](https://github.com/agent-ix/quire-contract-ir/blob/main/spec/program/PGM-01-governance.md)
   governs this crate directly.
