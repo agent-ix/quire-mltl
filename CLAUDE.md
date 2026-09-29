@@ -6,14 +6,22 @@ independence from the agent-ix/Quire ecosystem (architect ruling, Linear epic
 TL-175: every TL-* crate stays independent of Quire; only a dedicated
 integration crate may bridge them).
 
+## Hash / digest / pin antipattern: present, slated for removal
+
+This repository still contains hashes, digests, SHAs, pins, checksum catalogs and
+records that track files, versions or tools. That is an antipattern and it is slated
+for removal. Do not introduce any new use of it. When you touch code or specs that
+contain one, remove it as part of the change. The only hash that stays is a canonical
+identity digest that binds a proof to the exact content it proved. Package versions
+live in Cargo.toml / package.json and their lockfiles only; reports name the app
+version they ran.
+
 ## Current state
 
 TL-176 scaffolded the repository, TL-177 authored MRS-001/FR-001..FR-003/
 NFR-001/ADR-001, and TL-178 landed the port: `src/{request,report,dispatch,
 contract_ir}.rs` carry `tl-mltl`'s former `wire::request`, `wire::report`,
 `wire::observation` (renamed `dispatch`) and `mapping::contract_ir` modules.
-`Cargo.toml` pins exact `tl-mltl`, `quire-observation` and `tl-syntax` source
-revisions plus the `agent-ix-baseline-producer` dev-dependency.
 
 FR-004 and FR-005 add the native-correspondence dimension: identity
 preservation across the three documents, a typed refusal for a class this
@@ -52,7 +60,6 @@ decision and must not be advanced automatically.
 
 Mirrors `tl-mltl`'s own scaffolding:
 
-- `clippy.toml` pins MSRV to `1.98` and caps cognitive complexity / arg count
 - `deny.toml` allow-lists licenses (including the AGPL-3.0-only /
   AGPL-3.0-or-later terms this dependency graph actually carries) and denies
   unknown registries/git sources
@@ -60,7 +67,6 @@ Mirrors `tl-mltl`'s own scaffolding:
   Every `unsafe {` block must have a `// SAFETY:` comment within the 3
   preceding lines, or be listed in `scripts/unsafe_comment_baseline.txt`.
 - `rustfmt.toml` uses 100-char width
-- `rust-toolchain.toml` pins to `1.98.1` + rustfmt + clippy
 
 ## License
 
