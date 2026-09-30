@@ -4,31 +4,29 @@
 //! boundary before the port.
 //!
 //! `quire_observation::AdmissionRequest.producer` is typed
-//! `agent_ix_baseline_producer::AdmittedStaticBundle` — a real, currently
-//! load-bearing member of QObs's public admission API, pinned by both this
-//! repository and `quire-observation` itself at the same pre-deletion
-//! `filament-core-data` git revision (`a6fe662`, PR agent-ix/filament-core-data#99).
-//! `filament-core-data` deliberately deleted the producer-interface-1.2
+//! `quire_observation::AdmittedStaticBundle` — a real, currently load-bearing
+//! member of QObs's public admission API. QObs previously sourced this type
+//! from `filament-core-data`'s `agent-ix-baseline-producer` crate;
+//! `filament-core-data` deliberately deleted its producer-interface-1.2
 //! surface from its own HEAD (agent-ix/filament-core-data#144/#145,
 //! 2026-09-16) in favor of a Semantic IR / extraction-frontend architecture
-//! that answers a different question (spec-artifact lifting); it did not
-//! retire the boundary QObs actually depends on, which still resolves fine
-//! by pinned SHA.
+//! that answers a different question (spec-artifact lifting). QObs responded
+//! by implementing this admission surface locally
+//! (`quire_observation::producer`, re-exported at its crate root), modeling
+//! only the fields its own production code reads. This crate followed QObs's
+//! bump and dropped its own direct `agent-ix-baseline-producer` dependency
+//! entirely.
 //!
 //! `AdmittedStaticBundle` has no public constructor and no `Deserialize`
-//! impl by the producer crate's own design (FR-117-CON-2): the only way to
-//! obtain one is `StaticProducerBundle::admit`/`admit_json`, which validate
-//! and construct indivisibly. This module used to reach that boundary
-//! through a vendored copy of one of `filament-core-data`'s own fixtures
-//! (`fixtures/baseline-1-2/static-bundle-a.json`, AGPL-3.0-only) via
-//! `admit_json`. `StaticProducerBundle` itself — the *unvalidated offer*, as
-//! opposed to the admitted type — has entirely public fields and derives
-//! `Default`, so [`minimal_producer_bundle`] builds one directly from the
-//! compiled `agent-ix-baseline-producer` dependency's own public types
-//! (`ConfigurationDocument`, `ModelSelection`, `StaticClosure`, ...) and
-//! calls `.admit()`, the crate's real validation path — no JSON, no
-//! vendored bytes, and no in-repo copy of anything `filament-core-data`
-//! authors.
+//! impl by design: the only way to obtain one is
+//! `StaticProducerBundle::admit`/`admit_json`, which validate and construct
+//! indivisibly. This module never reads a vendored fixture for it.
+//! `StaticProducerBundle` itself — the *unvalidated offer*, as opposed to the
+//! admitted type — has entirely public fields, so [`minimal_producer_bundle`]
+//! builds one directly from `quire_observation`'s own public types
+//! (`ProducerConfiguration`, `ProducerDigest`, ...) and calls `.admit()`, the
+//! crate's real validation path — no JSON, no vendored bytes, and no in-repo
+//! copy of anything another repository authors.
 
 mod support;
 

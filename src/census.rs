@@ -3,9 +3,8 @@
 //! This module owns only the registry's *classification data* — which
 //! classes exist, how each one is classified (`applicable`, `excluded`, or
 //! `blocked`). It holds no fixture bytes and calls none of this crate's
-//! `derive`/`evaluate`/`read`/`map` paths: fixtures require `agent-ix-baseline-producer` and
-//! `quire_observation` admission machinery that only this crate's
-//! `[dev-dependencies]` provide, so building and replaying them is the
+//! `derive`/`evaluate`/`read`/`map` paths: fixtures require `quire_observation`
+//! admission machinery, so building and replaying them is the
 //! integration test suite's job (`tests/tc_087_native_correspondence_census.rs`),
 //! not this library's. See FR-005 and
 //! `spec/decisions/ADR-002-quire-mltl-owns-the-native-correspondence-dimension.md`.

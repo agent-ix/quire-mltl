@@ -3,16 +3,6 @@
 version = 4
 
 [[package]]
-name = "agent-ix-baseline-producer"
-version = "0.0.0"
-source = "git+https://github.com/agent-ix/filament-core-data?rev=a6fe662542770e6acbec4917cfe1772b349ee414#a6fe662542770e6acbec4917cfe1772b349ee414"
-dependencies = [
- "serde",
- "serde_json",
- "sha2",
-]
-
-[[package]]
 name = "block-buffer"
 version = "0.10.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -94,10 +84,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "quire-canonical"
+version = "0.3.0"
+source = "git+https://github.com/agent-ix/quire-canonical?tag=quire-canonical-v0.3.0#1d73f93f6b8139f10eb5bd5082a0b877958344fa"
+dependencies = [
+ "ryu-js",
+ "serde",
+ "sha2",
+ "thiserror",
+]
+
+[[package]]
 name = "quire-mltl"
 version = "0.1.0"
 dependencies = [
- "agent-ix-baseline-producer",
  "quire-observation",
  "serde",
  "serde_json",
@@ -109,9 +109,9 @@ dependencies = [
 [[package]]
 name = "quire-observation"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/quire-observation?rev=2bdeb833a330bfa777c19eb4c28c423f856f3ba6#2bdeb833a330bfa777c19eb4c28c423f856f3ba6"
+source = "git+https://github.com/agent-ix/quire-observation?rev=ab4abe3a03d24ed8430f513b8b695ac2d1471938#ab4abe3a03d24ed8430f513b8b695ac2d1471938"
 dependencies = [
- "agent-ix-baseline-producer",
+ "quire-canonical",
  "serde",
  "serde_json",
  "sha2",
@@ -126,6 +126,12 @@ checksum = "1fbf4db142a473a8d80c26bbf18454ed458bf8d26c8219c331daecfdbd079001"
 dependencies = [
  "proc-macro2",
 ]
+
+[[package]]
+name = "ryu-js"
+version = "1.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "04d056b875a9d2e6cb9a61d127afee9ac5999b9f87bcb32079d1318e505be714"
 
 [[package]]
 name = "serde"
