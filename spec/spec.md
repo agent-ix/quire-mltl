@@ -82,8 +82,8 @@ governance posture correctly.
 - Lossless preservation of the native subject and correspondence identities a
   request carries, across the request, the result and the Contract-IR mapping,
   with a typed non-value for any correspondence class this crate cannot
-  represent and a successor-label rule on the three contracts a consumer
-  admits by identity.
+  represent, and strict refusal of an unknown contract label on the three
+  contracts a consumer admits by label.
 - A closed, reviewed census of the native-correspondence classes the bridge
   carries losslessly, with one canonical fixture and one independently derived
   expected outcome per applicable class, and replay of each one.
@@ -132,8 +132,8 @@ result evaluation. FR-002 owns the QObs C00 compatibility dispatch boundary
 and depends on FR-001 for its one supported branch. FR-003 owns the
 Contract-IR result mapping and depends on FR-001 for the validated result it
 maps. FR-004 owns native-correspondence identity preservation, the typed
-refusal of an unrepresentable class, and contract-label stability across all
-three documents. FR-005 owns the closed correspondence-class census and its
+refusal of an unrepresentable class, and strict contract-label admission
+across all three documents. FR-005 owns the closed correspondence-class census and its
 replay. NFR-001 constrains this crate's governance and qualification boundary
 under PGM-01.
 

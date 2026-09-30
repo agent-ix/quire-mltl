@@ -116,17 +116,10 @@ This crate does not invent a representation for a refused class. A class that
 ought to be representable and is not is a specification finding for whichever
 side owns the gap, raised as such rather than closed with a local fallback.
 
-### Contract stability is part of the obligation
+### Contract labels are admitted strictly
 
 The consuming correspondence owner admits this crate's documents against an
-expected contract label. A silent change to the
-shape of `tl-mltl.temporal-assessment-request/v1`,
-`tl-mltl.temporal-assessment-result/v1`, or
-`tl-mltl.contract-ir-result-map/v1` would therefore invalidate that join
-without either side failing. Accordingly, quire-mltl SHALL NOT change the
-field set, field meaning, canonical byte form, or identity preimage of any of
-the three contracts without a successor contract label, and SHALL NOT reuse a
-label across two shapes. A strict reader SHALL refuse an unknown or
+expected contract label. A strict reader SHALL refuse an unknown or
 non-selected contract label rather than reading it permissively.
 
 ### What this requirement does not add

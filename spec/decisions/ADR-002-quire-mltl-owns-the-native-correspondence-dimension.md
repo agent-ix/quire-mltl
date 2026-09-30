@@ -78,9 +78,7 @@ The native-correspondence dimension is specified in `quire-mltl`, as a
   verbatim into the result and the Contract-IR mapping — so a correspondence
   cannot be dropped, re-keyed onto a different assessment, or reinterpreted.
   It also requires that a correspondence class this crate cannot represent
-  surfaces as a typed non-value the consumer can record, never as a Boolean,
-  and that the three contracts cannot change shape without a successor identity
-  that the consumer's expectation can detect.
+  surfaces as a typed non-value the consumer can record, never as a Boolean.
 - [FR-005](../requirements/FR-005-census-native-correspondence-classes.md)
   requires a closed, reviewable census of which native-correspondence classes
   the bridge carries losslessly, one canonical fixture and independent expected
@@ -137,7 +135,7 @@ one.
 - **Leave it unspecified, since FR-001 already transports the two identity
   fields.** Rejected: FR-001 validates them as identity *text* and says nothing
   about them naming an accepted native correspondence, about propagation into
-  the mapping, about successor identity on contract change, or about an
+  the mapping, or about an
   unrepresentable class. A field that is merely carried is not a preserved
   identity, and "it round-trips today" is not a contract.
 - **Add a `quire-contract-ir` dependency and consume its projection types
