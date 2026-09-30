@@ -18,27 +18,17 @@
 
 #![allow(dead_code)]
 
-use std::collections::{BTreeMap, BTreeSet};
-
-use agent_ix_baseline_producer::{
-    configuration_digest, AdmittedStaticBundle, ArtifactKind, ArtifactReference,
-    ConfigurationDocument, DeclarationSource, DigestDomainSelection, DigestSelection,
-    FormalDocument, InventoryCompleteness, InventoryDeclaration, ModelSelection, NativeSourceLabel,
-    NumericResourceLimit, ProfileSelection, RawByteDigest,
-    ResourceLimits as ProducerResourceLimits, Revision as ProducerRevision, StaticClosure,
-    StaticProducerBundle, WireReference, BASELINE_VERSION, INTERFACE_VERSION,
-    PRODUCER_REVISION_NAMESPACE,
-};
 use quire_mltl::request;
 use quire_observation::authority::{
     self, AuthoritySelection, Context, History, Limits as ObservationLimits, OpenClosed,
     SubjectSelection, TemporalBoundary,
 };
 use quire_observation::{
-    admit, AdmissionOutcome, AdmissionRequest, AdmittedRecord, Anchor, ClockRange, Digest,
-    Identity, Member, ObservationBinding, PackageSelection, QualifiedObservation, QualifiedSubject,
-    ResourceLimits, ScopeKind, ScopeSelection, SubjectIdentity, SubjectKind, ValueState,
-    Visibility, NATIVE_LINKED_PACKAGE_FORMAT,
+    admit, AdmissionOutcome, AdmissionRequest, AdmittedRecord, AdmittedStaticBundle, Anchor,
+    ClockRange, Digest, Identity, Member, ObservationBinding, PackageSelection,
+    ProducerConfiguration, ProducerDigest, QualifiedObservation, QualifiedSubject, ResourceLimits,
+    Revision as ProducerRevision, ScopeKind, ScopeSelection, StaticProducerBundle, SubjectIdentity,
+    SubjectKind, ValueState, Visibility, NATIVE_LINKED_PACKAGE_FORMAT, PRODUCER_INTERFACE_VERSION,
 };
 use serde_json::Value;
 use sha2::{Digest as _, Sha256};
@@ -155,94 +145,42 @@ pub(crate) fn digest(value: u8) -> Digest {
     Digest::new([value; 32])
 }
 
-/// Builds one admitted producer-interface-1.2 static bundle from the compiled
-/// `agent-ix-baseline-producer` dependency's own public types. See
-/// `tc_084_temporal_owner_wire.rs`'s original doc comment (TL-178) for why
-/// this crate builds one directly rather than reading a vendored fixture.
+/// Builds one admitted producer-interface-1.2 static bundle from
+/// `quire_observation`'s own local admission surface.
+///
+/// `quire_observation` used to consume `filament-core-data`'s
+/// `agent-ix-baseline-producer` crate for this shape; that crate is deleted
+/// from FCD's own tree (FCD issue #144: producer-interface-1.2 admission
+/// doesn't belong in FCD). `quire_observation` now implements this admission
+/// surface itself (`quire_observation::producer`, re-exported at its crate
+/// root), modeling only the fields its own production code reads:
+/// `bundleIdentity`, `bundleRevision`, `digest`, `interfaceVersion` and a
+/// `configuration` selection (identity + digest). This crate's own
+/// production code and tests never read `model`, `profile`, `inventory`,
+/// `staticClosure`, `components`, `endpoints` or `correspondences` off an
+/// admitted bundle — only `AdmissionRequest.producer` needs a bundle that
+/// admits — so this fixture builds the smaller shape directly rather than
+/// reading a vendored fixture, matching the pattern
+/// `tc_084_temporal_owner_wire.rs`'s doc comment describes.
 pub(crate) fn minimal_producer_bundle(tag: &str) -> AdmittedStaticBundle {
     let dummy_digest = format!("sha256:{}", "0".repeat(64));
 
-    let mut configuration = ConfigurationDocument {
+    let configuration = ProducerConfiguration {
         configuration_identity: format!("configuration:{tag}"),
-        baseline_version: BASELINE_VERSION.to_owned(),
-        digest: DigestSelection::canonical(dummy_digest.clone()),
-        model_authority: format!("authority:{tag}"),
-        profile_identities: BTreeSet::new(),
-        adapter_identities: BTreeSet::new(),
-        mapping_targets: BTreeSet::new(),
-        loss_policy: format!("loss:{tag}"),
-        resource_limits: ProducerResourceLimits {
-            numeric_resource_limit: Some(NumericResourceLimit::new(64, 32)),
-            declared_bounds: BTreeMap::new(),
+        digest: ProducerDigest {
+            label: "filament-canonical-json-1/1".to_owned(),
+            value: dummy_digest,
         },
-        digest_selections: DigestDomainSelection::baseline(),
-        revision_namespaces: [PRODUCER_REVISION_NAMESPACE.to_owned()]
-            .into_iter()
-            .collect(),
-        trusted_references: BTreeSet::new(),
-    };
-    configuration.digest = configuration_digest(&configuration).unwrap();
-
-    let model = ModelSelection {
-        model_identity: format!("model:{tag}"),
-        model_revision: ProducerRevision::producer("1"),
-        digest: DigestSelection::canonical(dummy_digest.clone()),
-    };
-    let profile = ProfileSelection {
-        profile_identity: format!("profile:{tag}"),
-        profile_revision: ProducerRevision::producer("1"),
-        digest: DigestSelection::canonical(dummy_digest.clone()),
-    };
-    let inventory = InventoryDeclaration {
-        inventory_identity: format!("inventory:{tag}"),
-        completeness: InventoryCompleteness::Complete,
-        component_identities: BTreeSet::new(),
-        endpoint_identities: BTreeSet::new(),
-        relationship_identities: BTreeSet::new(),
-    };
-    let static_closure = StaticClosure {
-        configuration_identity: configuration.configuration_identity.clone(),
-        configuration_digest: configuration.digest.clone(),
-        model_identity: model.model_identity.clone(),
-        model_digest: model.digest.clone(),
-        profile_identity: profile.profile_identity.clone(),
-        profile_digest: profile.digest.clone(),
-        declaration_sources: vec![DeclarationSource {
-            source: ArtifactReference {
-                ref_version: "1".to_owned(),
-                kind: ArtifactKind::Source,
-                authority: format!("authority:{tag}"),
-                identity: format!("source:{tag}"),
-                revision: ProducerRevision::producer("1"),
-                digest: RawByteDigest::new(dummy_digest.clone()).unwrap(),
-                wire: WireReference {
-                    identity: format!("wire:{tag}"),
-                    version: "1".to_owned(),
-                },
-            },
-            native: NativeSourceLabel::new(format!("native:{tag}"), "label-1"),
-            path: format!("{tag}.md"),
-            formal: FormalDocument {
-                document: format!("formal:{tag}"),
-                revision: ProducerRevision::producer("1"),
-            },
-        }],
     };
 
     let mut bundle = StaticProducerBundle {
         bundle_identity: Some(format!("bundle:{tag}")),
         bundle_revision: Some(ProducerRevision::producer("1")),
         digest: None,
-        interface_version: Some(INTERFACE_VERSION.to_owned()),
-        model: Some(model),
-        profile: Some(profile),
-        components: Vec::new(),
-        endpoints: Vec::new(),
-        relationships: Vec::new(),
-        inventory: Some(inventory),
+        interface_version: Some(PRODUCER_INTERFACE_VERSION.to_owned()),
         configuration: Some(configuration),
-        static_closure: Some(static_closure),
-        correspondences: Vec::new(),
+        relationships: None,
+        extra: serde_json::Map::new(),
     };
     bundle.digest = Some(bundle.canonical_digest_selection().unwrap());
     bundle
