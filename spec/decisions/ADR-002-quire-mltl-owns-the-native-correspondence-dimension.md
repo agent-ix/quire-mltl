@@ -44,9 +44,8 @@ Two things are wrong with that, not one.
 the agent-ix/Quire ecosystem, and only `quire-mltl` may bridge one to Quire
 types. A `tl-mltl` campaign lane whose producer is `quire-contract-ir` is
 exactly the coupling ADR-001 removed, re-entering through the specification
-rather than through `Cargo.toml`. `tl-mltl` is dropping the same lane in its
-own ADR-002 (see [agent-ix/tl-mltl#86](https://github.com/agent-ix/tl-mltl/pull/86),
-pending merge as of 2026-09-21); the dimension has to live somewhere, and this
+rather than through `Cargo.toml`. `tl-mltl` drops the same lane in its
+own ADR-002; the dimension has to live somewhere, and this
 crate is the only place the ruling allows.
 
 **Second, the direction.** The task cast `tl-mltl` as the *consumer* of a

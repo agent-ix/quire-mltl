@@ -1,7 +1,7 @@
 # License decision
 
 This repository is licensed under `AGPL-3.0-or-later`, this org's default for
-`quire-*` program repositories (PGM-01-R04).
+`quire-*` program repositories.
 
 An earlier version of this decision declared `AGPL-3.0-only` as a deliberate
 exception, reasoning that `quire-mltl` directly incorporates
@@ -24,8 +24,3 @@ different license body, and is carried by:
 
 - `license = "AGPL-3.0-or-later"` in `Cargo.toml` (the SPDX identifier), and
 - this file.
-
-Tracked under `agent-ix/quire-mltl` TL-176, part of epic TL-175. Corrected
-during TL-176's review — caught by an Opus review agent that fetched
-`quire-observation`'s actual `origin/main` instead of trusting a local
-checkout sitting on a stale branch.
