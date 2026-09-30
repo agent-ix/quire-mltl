@@ -125,8 +125,7 @@ one.
   agreement decision. What is unspecified is the *counterparty* obligation — that
   the TL-side documents FR-026 constructs and reads carry the correspondence
   losslessly and refuse legibly. That obligation belongs to the crate that owns
-  those documents, and a consumer cannot specify its supplier's contract
-  stability.
+  those documents, and a consumer cannot specify its supplier's contract.
 - **Keep it in `tl-mltl` and depend on an artifact rather than a crate.**
   Rejected in `tl-mltl`'s own ADR-002: the direction of the dependency is what
   the ruling is about, and a campaign row that cannot become applicable until
