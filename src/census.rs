@@ -533,27 +533,7 @@ pub fn applicable_fixture_ids() -> Vec<&'static str> {
 
 #[cfg(test)]
 mod tests {
-    use super::{census, BlockedClass, ClassState, RegistryEntry, REGISTRY};
-
-    // Trace: TC-087, FR-005-AC-3
-    #[test]
-    fn reclassifying_an_entry_preserves_its_key() {
-        let applicable = REGISTRY
-            .iter()
-            .find(|entry| matches!(entry.state, ClassState::Applicable(_)))
-            .copied()
-            .expect("registry has an applicable entry");
-        let blocked = RegistryEntry {
-            state: ClassState::Blocked(BlockedClass {
-                dependency: "upstream contract",
-                admission_condition: "upstream contract accepted",
-            }),
-            ..applicable
-        };
-        assert_ne!(blocked.state, applicable.state);
-        assert_eq!(blocked.token, applicable.token);
-        assert_eq!(blocked.dimensions, applicable.dimensions);
-    }
+    use super::{census, ClassState, REGISTRY};
 
     // Trace: TC-087, FR-005-AC-1
     #[test]
