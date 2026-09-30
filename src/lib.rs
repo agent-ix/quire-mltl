@@ -14,11 +14,3 @@ pub mod contract_ir;
 pub mod dispatch;
 pub mod report;
 pub mod request;
-
-/// Exact compiled `quire-observation` source revision this crate's
-/// `Cargo.toml`/`Cargo.lock` pin, re-derived from this crate's own pin
-/// (rather than carried forward from `tl-mltl`'s existing, drifted
-/// `QUIRE_OBSERVATION_REVISION` constant). Embedded verbatim into every
-/// [`request::ArtifactReference`]-bearing `observationRevision` wire field
-/// and every [`dispatch::Compatibility`] disposition. See FR-002.
-pub const QUIRE_OBSERVATION_REVISION: &str = "2bdeb833a330bfa777c19eb4c28c423f856f3ba6";

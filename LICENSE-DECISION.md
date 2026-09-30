@@ -8,8 +8,8 @@ exception, reasoning that `quire-mltl` directly incorporates
 `quire-observation` (`https://github.com/agent-ix/quire-observation`), which
 was believed to be `AGPL-3.0-only` itself. That premise was wrong: as of
 `quire-observation`'s 2026-09-13 owner decision, it is `AGPL-3.0-or-later`
-(see its `Cargo.toml` `license` field and its own `LICENSE-DECISION.md`,
-confirmed live at the exact `quire-mltl` dependency pin). The reasoning for an
+(see its `Cargo.toml` `license` field and its own `LICENSE-DECISION.md`).
+The reasoning for an
 exception no longer applies — nothing in this crate's dependency graph forces
 `-only`: `quire-observation` and `tl-syntax`/`tl-mltl` all permit `-or-later`
 or a compatible permissive license. The one `AGPL-3.0-only` term present,

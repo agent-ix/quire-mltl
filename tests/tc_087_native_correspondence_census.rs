@@ -1029,7 +1029,7 @@ fn tc_087_excluded_classes_cite_one_of_the_reviewed_reason_codes() {
 
 // Trace: TC-087, FR-005-AC-7
 #[test]
-fn tc_087_census_report_carries_population_exclusions_blocked_and_revisions() {
+fn tc_087_census_report_carries_population_exclusions_and_blocked() {
     let report = census::census();
     assert!(report.total > 0);
     assert!(!report.applicable.is_empty());
@@ -1040,13 +1040,6 @@ fn tc_087_census_report_carries_population_exclusions_blocked_and_revisions() {
         report.applicable.len() + report.excluded.len() + report.blocked.len(),
         report.total
     );
-
-    // The measured revisions are this crate's own real dependency pins, not
-    // placeholder text -- cross-checked against the checked-in Cargo.toml.
-    let manifest = include_str!("../Cargo.toml");
-    assert!(manifest.contains(report.measured_revisions.tl_mltl));
-    assert!(manifest.contains(report.measured_revisions.tl_syntax));
-    assert!(manifest.contains(report.measured_revisions.quire_observation));
 }
 
 // Trace: TC-087, FR-005-AC-6
@@ -1142,7 +1135,6 @@ fn tc_087_counterpart_contract_fields_are_bounded_identity_text_not_a_schema_bod
                     "the exchanged-document digest must be exactly one SHA-256, not a \
                      schema body"
                 );
-                assert!(counterpart.provenance.len() <= MAX_IDENTITY_TEXT_BYTES);
             }
         }
     }

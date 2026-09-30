@@ -56,14 +56,7 @@ crate that depends on both `tl-mltl` and `quire-observation` (plus
 
 - `tl-mltl`'s `wire::request`, `wire::observation` (renamed `dispatch`),
   `wire::report`, and `mapping::contract_ir` modules move to `quire-mltl`
-  unchanged in behavior (TL-178), with one deliberate exception: the
-  `observationRevision` wire field's exported revision constant is re-derived
-  from `quire-mltl`'s own Cargo pin at port time rather than carried forward
-  from `tl-mltl`'s existing `QUIRE_OBSERVATION_REVISION` constant, which has
-  drifted from `tl-mltl`'s own Cargo pin since commit `7638e2c` re-pinned the
-  dependency without updating the constant (see
-  [FR-001](../requirements/FR-001-admit-temporal-assessment-requests-and-results.md)
-  and [FR-002](../requirements/FR-002-dispatch-qobs-c00-compatibility.md)).
+  unchanged in behavior (TL-178).
   `tl-mltl` retains only its own future/past evaluation semantics, horizon
   analysis, and the wire contracts that carry no `quire-observation` type
   (`trace`, `command`, legacy aliases).
@@ -104,10 +97,6 @@ crate that depends on both `tl-mltl` and `quire-observation` (plus
   `tl-mltl` and `quire-observation` dependencies for the lower-level joins
   that remain its own domain job, gaining no new higher-level API from
   `quire-mltl`.
-- `quire-mltl`'s `Cargo.toml` directly pins exact `tl-mltl`,
-  `quire-observation`, and `tl-syntax` source revisions; only this crate
-  needs to be re-reviewed and repinned when either upstream's Quire-facing
-  contract changes, rather than `tl-mltl` itself.
 - Only this repository carries the `agent-ix-baseline-producer` dev-dependency
   and the PGM-01 governance obligations (see
   [NFR-001](../requirements/NFR-001-governance-boundary.md)) that follow from

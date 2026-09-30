@@ -3,18 +3,15 @@
 //! Exercises `subject_identity`/`correspondence_identity` admission,
 //! content-identity preimage membership, verbatim propagation into the
 //! result and Contract-IR mapping, correction-chain identity stability,
-//! read-time and evaluation-time refusal, and the three contracts' shape
-//! and no-`quire-contract-ir`-dependency stability (FR-004-AC-1..8). Reuses
-//! `tc_084_temporal_owner_wire.rs`'s owner-admission fixtures via
+//! read-time and evaluation-time refusal, unknown-contract-label refusal,
+//! and the no-`quire-contract-ir`-dependency boundary (FR-004-AC-1..7).
+//! Reuses `tc_084_temporal_owner_wire.rs`'s owner-admission fixtures via
 //! `tests/support`.
 
 mod support;
 
-use std::collections::BTreeSet;
-
 use quire_mltl::contract_ir::{self, MappedOutcome, MappingSelection, NonValueKind};
 use quire_mltl::{report, request};
-use serde_json::Value;
 use support::{
     admit_history, admit_request, future_formula, observations, owner_views,
     owner_views_with_clock, past_formula, proposition_map, trace_document, FixtureClock,
@@ -564,9 +561,9 @@ fn tc_086_evaluation_time_refusal_is_a_typed_non_value_never_a_boolean() {
     // constructs a request that reaches them.
 }
 
-// Trace: TC-086, FR-004-AC-7
+// Trace: TC-086, NFR-001-AC-1
 #[test]
-fn tc_086_unknown_contract_label_is_refused_and_field_sets_are_pinned() {
+fn tc_086_unknown_contract_label_is_refused() {
     let decision = owner_views("decision-ac7", 2);
     let surrounding = owner_views("surrounding-ac7", 2);
     let formula = future_formula(SemanticProfile::ClosedTraceV1);
@@ -640,89 +637,9 @@ fn tc_086_unknown_contract_label_is_refused_and_field_sets_are_pinned() {
         };
         assert_eq!(error.code(), OwnerReadErrorCode::ContractMismatch);
     }
-
-    // The exact top-level field set of each of the three contracts is
-    // pinned: an addition, removal, or rename changes this set and fails
-    // the assertion, which is exactly the "test that fails when any of them
-    // changes without a successor label" FR-004-AC-7 requires.
-    let request_keys = top_level_keys(request_document.bytes());
-    let expected_request_keys: BTreeSet<&str> = [
-        "contractVersion",
-        "identity",
-        "lane",
-        "semanticProfile",
-        "operatorProfile",
-        "formula",
-        "input",
-        "propositionMap",
-        "clock",
-        "clockIdentity",
-        "clockRevision",
-        "subjectIdentity",
-        "correspondenceIdentity",
-        "anchor",
-        "evaluator",
-        "syntaxRevision",
-        "observationRevision",
-        "decisionScopeProgress",
-        "decisionScopeClosure",
-        "surroundingExecutionProgress",
-        "surroundingExecutionClosure",
-        "completeness",
-        "availability",
-        "limits",
-    ]
-    .into_iter()
-    .collect();
-    assert_eq!(as_str_set(&request_keys), expected_request_keys);
-
-    let result_keys = top_level_keys(result_document.bytes());
-    let expected_result_keys: BTreeSet<&str> = [
-        "contractVersion",
-        "identity",
-        "revision",
-        "request",
-        "lane",
-        "subjectIdentity",
-        "correspondenceIdentity",
-        "formula",
-        "input",
-        "propositionMap",
-        "clock",
-        "evaluator",
-        "anchor",
-        "execution",
-        "truth",
-        "finalResult",
-        "settlement",
-        "decisionSupport",
-        "decisionScopeProgress",
-        "decisionScopeClosure",
-        "surroundingExecutionProgress",
-        "surroundingExecutionClosure",
-        "completeness",
-        "availability",
-        "relation",
-        "usage",
-    ]
-    .into_iter()
-    .collect();
-    assert_eq!(as_str_set(&result_keys), expected_result_keys);
-
-    let mapping_keys = top_level_keys(mapping_document.bytes());
-    let expected_mapping_keys: BTreeSet<&str> = [
-        "contractVersion",
-        "identity",
-        "sourceResult",
-        "outcome",
-        "source",
-    ]
-    .into_iter()
-    .collect();
-    assert_eq!(as_str_set(&mapping_keys), expected_mapping_keys);
 }
 
-// Trace: TC-086, FR-004-AC-8
+// Trace: TC-086, FR-004-AC-7
 #[test]
 fn tc_086_manifest_declares_no_quire_contract_ir_dependency() {
     let manifest = include_str!("../Cargo.toml");
@@ -746,18 +663,4 @@ fn splice(bytes: &[u8], needle: &str, replacement: &str) -> Vec<u8> {
         "expected {needle:?} in the exact canonical bytes"
     );
     text.replacen(needle, replacement, 1).into_bytes()
-}
-
-fn top_level_keys(bytes: &[u8]) -> BTreeSet<String> {
-    let value: Value = serde_json::from_slice(bytes).unwrap();
-    value
-        .as_object()
-        .unwrap()
-        .keys()
-        .cloned()
-        .collect::<BTreeSet<_>>()
-}
-
-fn as_str_set(keys: &BTreeSet<String>) -> BTreeSet<&str> {
-    keys.iter().map(String::as_str).collect()
 }

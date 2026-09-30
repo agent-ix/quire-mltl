@@ -84,9 +84,8 @@ The native-correspondence dimension is specified in `quire-mltl`, as a
 - [FR-005](../requirements/FR-005-census-native-correspondence-classes.md)
   requires a closed, reviewable census of which native-correspondence classes
   the bridge carries losslessly, one canonical fixture and independent expected
-  outcome per applicable class, exact-digest replay against the accepted
-  `quire-contract-ir` FR-025/FR-026 contract revisions, and blocked classes
-  that stay visible and out of the denominator.
+  outcome per applicable class, replay of every applicable class, and blocked
+  classes that stay visible and out of the denominator.
 
 `quire-mltl` adds no native grammar, predicate semantics, correspondence
 derivation, clock/history correspondence, or agreement decision. Those stay
@@ -98,16 +97,12 @@ the native source contracts.
 The native correspondence reaches this crate as *data inside a request it
 already strict-reads*. `RequestInput` already carries `subject_identity` and
 `correspondence_identity`, and `RequestWire` already persists them beside the
-formula, proposition-map, clock, anchor, evaluator and dependency-revision
-references. FR-004 constrains how those fields are validated and propagated; it
+formula, proposition-map, clock, anchor and evaluator references. FR-004 constrains how those fields are validated and propagated; it
 does not introduce a type from another crate.
 
-The `quire-contract-ir` contract labels, schema digests and revisions that
-FR-005's fixtures pin are asserted **by identity and digest over the bytes this
-crate actually exchanged**, never by copying a schema, a vocabulary table or a
-fixture out of `quire-contract-ir`. A copy would drift, and it would put
-another repository's content in this one. The digest is checkable here,
-offline, forever; the upstream contract identity is provenance beside it.
+No schema, vocabulary table or fixture is copied out of `quire-contract-ir`:
+a copy would drift, and it would put another repository's content in this
+one.
 
 ## Consequences
 
@@ -116,9 +111,7 @@ offline, forever; the upstream contract identity is provenance beside it.
 - `quire-contract-ir` #63 and #64 were the specification tickets for FR-025 and
   FR-026 and have both closed; their implementations are #70 (delivered by
   `quire-contract-ir` PR #77) and #71. So the "blocked on #63/#64" condition
-  PR #44 carried is no longer the live gate. FR-005 pins the accepted
-  *contract revisions* instead of the ticket states, because a ticket state is
-  not a measurement of what the contract now says.
+  PR #44 carried is no longer the live gate.
 - A correspondence class this crate refuses is a specification finding for
   whichever side owns the gap, not a fallback to invent here. FR-001 already
   refuses a timestamped-event clock family as unsupported; FR-004 makes that
