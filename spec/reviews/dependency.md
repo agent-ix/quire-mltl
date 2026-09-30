@@ -42,14 +42,13 @@ graph TD
 
 | Edge | Verified against |
 |---|---|
-| MRS-001 depends_on tl-mltl/MRS-001, quire-observation/MRS-001, quire-contract-ir/PGM-01 | Matches the existing seeded placeholder plus the added PGM-01 governance edge this ticket's own rationale requires. |
+| MRS-001 depends_on tl-mltl/MRS-001, quire-observation/MRS-001 | Matches the existing seeded placeholder. |
 | FR-001 depends_on tl-mltl/FR-018 | FR-018 is the direct ancestor of the ported wire boundary and, in `tl-mltl`'s own graph, already depends on `tl-mltl` FR-001/FR-003 (future evaluation) and `tl-syntax` FR-011/FR-012 (past semantics) that `report.rs::execute()` calls into — covered transitively rather than re-cited directly. |
 | FR-001 depends_on quire-observation/FR-004 | FR-004 owns exactly the `authority::{clock,progress,closure,completeness,availability}` module set `request.rs` imports. |
 | FR-001 depends_on tl-syntax/FR-014 | FR-014 owns exactly the `FormulaDocument`/`PropositionMapDocument`/`SemanticProfile`/`SyntaxArtifactLimits` types `request.rs` imports. |
 | FR-002 depends_on quire-mltl/FR-001 | `dispatch::consume_temporal` calls `request::derive` directly. |
 | FR-002 references quire-observation/FR-010, FR-011 | `observation.rs` sources `repair::CONTRACT`/`query::CONTRACT` from exactly those owned modules; `references` (not `depends_on`) matches `tl-mltl`'s own FR-019 relationship type for the same contracts, since this crate declines to consume them. |
 | FR-003 depends_on quire-mltl/FR-001 | `contract_ir.rs` maps only from `ValidatedTemporalResult`, FR-001's output type. |
-| NFR-001 references quire-contract-ir/PGM-01 | Mirrors `tl-mltl` NFR-002's citation pattern for the same standard. |
 
 ## Findings
 

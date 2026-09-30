@@ -115,8 +115,8 @@ Any reported figure names its population, its exclusions, and its blocked
 set. A class count, a fixture count, or a
 percentage is not by itself evidence that the bridge is correct, complete,
 qualified, or released, and the census records no approval or release decision
-— that authority remains with the named human release authority under
-PGM-01-R06/R09, as NFR-001 requires.
+— that authority remains with the named human release authority, as NFR-001
+requires.
 
 ## Acceptance Criteria
 

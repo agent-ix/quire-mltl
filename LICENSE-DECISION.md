@@ -1,7 +1,7 @@
 # License decision
 
 This repository is licensed under `AGPL-3.0-or-later`, this org's default for
-`quire-*` program repositories (PGM-01-R04).
+`quire-*` program repositories.
 
 An earlier version of this decision declared `AGPL-3.0-only` as a deliberate
 exception, reasoning that `quire-mltl` directly incorporates

@@ -5,8 +5,6 @@ type: ADR
 status: accepted
 owner: kreneskyp
 relationships:
-  - target: ix://agent-ix/quire-contract-ir/PGM-01
-    type: depends_on
   - target: ix://agent-ix/quire-mltl/MRS-001
     type: relates_to
 ---
@@ -21,8 +19,7 @@ the decision itself. TL-178 performs the wholesale port of `tl-mltl`'s
 `wire::request`, `wire::observation` (as `dispatch`), `wire::report`, and
 `mapping::contract_ir` modules into this crate; TL-179 removes `tl-mltl`'s
 `quire-observation` dependency and rewrites its FR-018 to a generic owner
-boundary; TL-180 removes `tl-mltl`'s `ix://agent-ix/quire-contract-ir/PGM-01`
-citation (MRS-001's `depends_on` edge and NFR-002's PGM-01 reference) and
+boundary; TL-180 removes `tl-mltl`'s Quire governance citations and
 retires FR-019, completing `tl-mltl`'s independence. TL-181 repoints
 `quire-contract-ir`'s own imports and schema catalog from `tl-mltl` to
 `quire-mltl`, completing the consumer side of this decision.
@@ -39,7 +36,7 @@ availability}` owner-assertion views directly into the request/result
 documents, plus a QObs C00 compatibility-dispatch shim and a Contract-IR
 result mapping. That coupling meant every consumer of `tl-mltl` — including
 one that only wants a standalone MLTL evaluator with no Quire involvement at
-all — pulled in `quire-observation` and, through it, PGM-01 governance that
+all — pulled in `quire-observation` and, through it, Quire governance that
 has nothing to do with temporal evaluation.
 
 The owner ruled that every TL-* crate (`tl-syntax`, `tl-parse`, `tl-mltl`,
@@ -61,16 +58,14 @@ crate that depends on both `tl-mltl` and `quire-observation` (plus
   analysis, and the wire contracts that carry no `quire-observation` type
   (`trace`, `command`, legacy aliases).
 - `tl-mltl` drops its `quire-observation` dependency (TL-179) and its
-  `ix://agent-ix/quire-contract-ir/PGM-01` citation (TL-180), becoming an
+  Quire governance citations (TL-180), becoming an
   ordinary Rust crate usable by, but not part of, the Quire ecosystem.
-- `quire-mltl` takes on both the `quire-observation` dependency and the
-  `PGM-01` citation directly. It is not an ordinary consumer of Quire types;
+- `quire-mltl` takes on the `quire-observation` dependency directly. It is not an ordinary consumer of Quire types;
   it is the load-bearing seam between a Quire-independent evaluator and
-  Quire's own observation authority, and PGM-01 governs it the same way it
-  would govern any other Quire-owned program repository. See
+  Quire's own observation authority, and it is treated as a Quire-owned program repository. See
   [MRS-001](../spec.md) for the full rationale.
 - `quire-mltl` is licensed `AGPL-3.0-or-later`, this org's default for
-  `quire-*` program repositories under PGM-01-R04 — not `AGPL-3.0-only`. An
+  `quire-*` program repositories — not `AGPL-3.0-only`. An
   earlier scaffold draft of this repository declared `-only` as a deliberate
   exception, reasoned from a local `quire-observation` checkout that was
   sitting on a stale branch; `quire-observation`'s actual `origin/main` has
@@ -83,7 +78,7 @@ crate that depends on both `tl-mltl` and `quire-observation` (plus
 ## Consequences
 
 - `tl-mltl` becomes reusable by any consumer that wants bounded MLTL
-  evaluation without accepting a Quire dependency or PGM-01 governance —
+  evaluation without accepting a Quire dependency or Quire governance —
   the ruling's stated goal.
 - A consumer that specifically needs the QObs-bridged temporal-assessment
   contract, the compatibility dispatch, or the Contract-IR mapping now
@@ -91,14 +86,14 @@ crate that depends on both `tl-mltl` and `quire-observation` (plus
 - `quire-contract-ir` is exactly that consumer: TL-181 repoints its
   `src/temporal/request.rs`, `correspondence.rs`, `join.rs`, `reader.rs`, and
   schema-catalog entries from `tl_mltl::wire::*`/`tl_mltl::mapping::contract_ir::*`
-  to `quire_mltl::*`, and updates its own `PGM-01-governance.md`,
+  to `quire_mltl::*`, and updates its own
   `FR-026`, and `FR-028` to reflect the new boundary. This is the
   consumer-side half of this decision; `quire-contract-ir` keeps its direct
   `tl-mltl` and `quire-observation` dependencies for the lower-level joins
   that remain its own domain job, gaining no new higher-level API from
   `quire-mltl`.
 - Only this repository carries the `agent-ix-baseline-producer` dev-dependency
-  and the PGM-01 governance obligations (see
+  and the governance obligations (see
   [NFR-001](../requirements/NFR-001-governance-boundary.md)) that follow from
   being the genuinely Quire-governed half of the boundary.
 
@@ -113,8 +108,7 @@ crate that depends on both `tl-mltl` and `quire-observation` (plus
   `tl-mltl` into `quire-observation`.** Rejected: contradicts the existing
   ownership split — `tl-mltl` owns temporal evaluation semantics,
   `quire-observation` owns observation admission, replay, and authority
-  derivation. A merge would duplicate governance and blur the PGM-01-R07
-  component classification both crates already have.
+  derivation. A merge would duplicate governance and blur the component boundary both crates already have.
 - **Leave the `quire-observation` dependency optional behind a Cargo feature
   inside `tl-mltl`, default-off.** Rejected: a feature flag is a
   compatibility layer, and this org does not add compatibility layers to

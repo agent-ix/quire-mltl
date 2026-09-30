@@ -7,8 +7,6 @@ relationships:
     type: depends_on
   - target: ix://agent-ix/quire-observation/MRS-001
     type: depends_on
-  - target: ix://agent-ix/quire-contract-ir/PGM-01
-    type: depends_on
 ---
 
 # Master Requirements Specification
@@ -32,25 +30,20 @@ semantics, observation-authority semantics, or formula/trace syntax — those
 stay owned by `tl-mltl`, `quire-observation`, and `tl-syntax` respectively,
 and `quire-mltl` consumes them as dependencies.
 
-### Why quire-mltl is Quire-governed and tl-mltl is not
+### Why quire-mltl is Quire-owned and tl-mltl is not
 
-`tl-mltl` is having its own `ix://agent-ix/quire-contract-ir/PGM-01` citation
-removed (TL-180) as part of becoming fully independent of the Quire ecosystem
-— an ordinary Rust crate that happens to be usable by Quire, not a component
-of it. `quire-mltl` takes the opposite posture on purpose: it directly
-incorporates `quire-observation` (a Quire-governed observation boundary) and
-exists specifically to hand Quire-shaped evidence — Contract-IR mappings,
+`tl-mltl` is fully independent of the Quire ecosystem (TL-180) — an ordinary
+Rust crate that happens to be usable by Quire, not a component of it.
+`quire-mltl` takes the opposite posture on purpose: it directly incorporates
+`quire-observation` (a Quire-governed observation boundary) and exists
+specifically to hand Quire-shaped evidence — Contract-IR mappings,
 owner-assertion-qualified temporal results — back into the ecosystem. It is
 not an ordinary consumer of Quire types; it is the load-bearing seam between a
-Quire-independent evaluator and Quire's own observation authority. Under PGM-01-R07's component/artifact
-classification criterion, that seam role makes `quire-mltl` itself a
-Quire-owned program repository, not merely a consumer of one; PGM-01 at
-`ix://agent-ix/quire-contract-ir/PGM-01` therefore governs this crate's
-compatibility, evidence, human authority, and qualification
-boundaries directly, the same way it would govern any other Quire-owned
-program repository. The two repositories are not inconsistent with each other
-— they are the two halves of the same boundary, each stating its own
-governance posture correctly.
+Quire-independent evaluator and Quire's own observation authority. That seam
+role makes `quire-mltl` itself a Quire-owned program repository, not merely a
+consumer of one. The two repositories are not inconsistent with each other —
+they are the two halves of the same boundary, each stating its own posture
+correctly.
 
 ## Scope
 
@@ -134,8 +127,7 @@ Contract-IR result mapping and depends on FR-001 for the validated result it
 maps. FR-004 owns native-correspondence identity preservation, the typed
 refusal of an unrepresentable class, and strict contract-label admission
 across all three documents. FR-005 owns the closed correspondence-class census and its
-replay. NFR-001 constrains this crate's governance and qualification boundary
-under PGM-01.
+replay. NFR-001 constrains this crate's governance and qualification boundary.
 
 ### Why the native-correspondence dimension is here
 
@@ -176,8 +168,6 @@ correctly-scoped replacement; see
   FR-002. This ticket (TL-177) does not itself edit either file — those edits
   land under TL-179/TL-180 — but the References above point at FR-018/FR-019
   as they exist today, not at artifacts that stay frozen.
-- [PGM-01](https://github.com/agent-ix/quire-contract-ir/blob/main/spec/program/PGM-01-governance.md)
-  governs this crate directly.
 - `quire-contract-ir`
   [FR-025](https://github.com/agent-ix/quire-contract-ir/blob/main/spec/contract/FR-025-native-predicate-tl-projection.md)
   and

@@ -48,7 +48,7 @@ flowchart LR
 | FR-001 | quire-mltl | core |
 | FR-002 | quire-mltl | core |
 | FR-003 | quire-mltl | core |
-| NFR-001 | quire-mltl (cites quire-contract-ir/PGM-01) | cross-cutting |
+| NFR-001 | quire-mltl | cross-cutting |
 | Future/past truth evaluation | tl-mltl | external, assumed |
 | Observation admission/replay/authority derivation/repair/query | quire-observation | external, assumed |
 | Formula/proposition-map grammar and parsing | tl-syntax | external, assumed |
