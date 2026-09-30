@@ -26,10 +26,9 @@ use quire_observation::authority::{
 use quire_observation::{
     admit, AdmissionOutcome, AdmissionRequest, AdmittedRecord, AdmittedStaticBundle, Anchor,
     ClockRange, Digest, Identity, Member, ObservationBinding, PackageSelection,
-    ProducerConfiguration, ProducerDigest, QualifiedObservation, QualifiedSubject,
-    ResourceLimits, Revision as ProducerRevision, ScopeKind, ScopeSelection, StaticProducerBundle,
-    SubjectIdentity, SubjectKind, ValueState, Visibility, NATIVE_LINKED_PACKAGE_FORMAT,
-    PRODUCER_INTERFACE_VERSION,
+    ProducerConfiguration, ProducerDigest, QualifiedObservation, QualifiedSubject, ResourceLimits,
+    Revision as ProducerRevision, ScopeKind, ScopeSelection, StaticProducerBundle, SubjectIdentity,
+    SubjectKind, ValueState, Visibility, NATIVE_LINKED_PACKAGE_FORMAT, PRODUCER_INTERFACE_VERSION,
 };
 use serde_json::Value;
 use sha2::{Digest as _, Sha256};
