@@ -12,7 +12,7 @@ bridge them. `quire-mltl` is that one deliberate exception. It exists so
 ## Current state
 
 This repository is freshly scaffolded (TL-176) and has no implementation yet.
-`src/lib.rs` is a placeholder. `Cargo.toml` pre-declares and pins the
+`src/lib.rs` is a placeholder. `Cargo.toml` pre-declares the
 `tl-mltl`, `quire-observation`, and `tl-syntax` dependencies (plus
 `agent-ix-baseline-producer` as a dev-dependency) that the bridging
 implementation will use, so that port does not need to redo this scaffolding

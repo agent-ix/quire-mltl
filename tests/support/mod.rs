@@ -686,13 +686,6 @@ pub(crate) fn admit_history(
     tl_mltl::past::history::read(document.bytes(), history, TlOwnerLimits::default()).unwrap()
 }
 
-pub(crate) fn sha256(bytes: &[u8]) -> String {
-    Sha256::digest(bytes)
-        .iter()
-        .map(|byte| format!("{byte:02x}"))
-        .collect()
-}
-
 pub(crate) fn exact_wire_identity(contract: &str, bytes: &[u8], identity: &str) -> String {
     let member = format!(",\"identity\":\"{identity}\"");
     let position = bytes

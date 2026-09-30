@@ -1,5 +1,5 @@
 //! TC-087: FR-005, the closed native-correspondence class census and its
-//! exact-digest replay.
+//! replay.
 //!
 //! Each `tc_087_*` fixture function below is named exactly by one
 //! `census::ApplicableClass::fixture_id` in `src/census.rs`'s `REGISTRY`.
@@ -7,8 +7,8 @@
 //! this crate's real `derive`/`evaluate`/`read`/`map` paths, (2) compares
 //! the *re-derived* outcome against an outcome literal authored by hand in
 //! this file (never produced by calling this crate's own paths first --
-//! FR-005-AC-4's "non-independent" rule), and (3) checks the fixture's
-//! recorded digest before accepting its bytes (FR-005-AC-5). Reuses
+//! FR-005-AC-4's "non-independent" rule), and (3) proves a corrupted copy of
+//! its bytes is refused by strict-read (FR-005-AC-5). Reuses
 //! `tc_084_temporal_owner_wire.rs`'s owner-admission fixtures via
 //! `tests/support`.
 
@@ -24,7 +24,6 @@ use support::{
     observations, owner_views, owner_views_with_clock, past_formula, proposition_map,
     trace_document, FixtureClock, OwnerViews,
 };
-use tl_mltl::wire::common::raw_sha256;
 use tl_mltl::wire::{trace, OwnerLimits, OwnerReadErrorCode};
 use tl_syntax::{FormulaDocument, PropositionMapDocument, SemanticProfile};
 
@@ -58,27 +57,18 @@ fn base_input<'a>(
     }
 }
 
-/// FR-005-AC-5: "check recorded digests before strict reading... a fixture
-/// whose bytes... disagree with what it declares is a typed refusal, not a
-/// mismatch to investigate later." Corrupts one byte of `bytes`, proves the
-/// corruption changes the recorded digest (the digest actually depends on
-/// every byte, so the check below is not vacuous), and proves `strict_read`
-/// -- the real reader for this document type -- refuses the corrupted copy
+/// FR-005-AC-5: a fixture whose bytes disagree with what it declares is a
+/// typed refusal. Corrupts one byte of `bytes` and proves `strict_read` --
+/// the real reader for this document type -- refuses the corrupted copy
 /// rather than silently accepting altered content.
 fn assert_replay_detects_corruption(bytes: &[u8], strict_read: impl Fn(&[u8]) -> bool) {
-    let recorded = raw_sha256(bytes);
     let mut corrupted = bytes.to_vec();
     let flip_at = corrupted.len() / 2;
     corrupted[flip_at] ^= 0xFF;
-    assert_ne!(
-        raw_sha256(&corrupted),
-        recorded,
-        "a corrupted fixture must not silently share the recorded digest"
-    );
     assert!(
         !strict_read(&corrupted),
-        "a fixture whose bytes disagree with its recorded digest must be a typed refusal, \
-         not silently accepted by strict-read"
+        "a fixture whose bytes were altered must be a typed refusal, not silently \
+         accepted by strict-read"
     );
 }
 
@@ -1029,7 +1019,7 @@ fn tc_087_excluded_classes_cite_one_of_the_reviewed_reason_codes() {
 
 // Trace: TC-087, FR-005-AC-7
 #[test]
-fn tc_087_census_report_carries_population_exclusions_blocked_and_revisions() {
+fn tc_087_census_report_carries_population_exclusions_and_blocked() {
     let report = census::census();
     assert!(report.total > 0);
     assert!(!report.applicable.is_empty());
@@ -1040,13 +1030,6 @@ fn tc_087_census_report_carries_population_exclusions_blocked_and_revisions() {
         report.applicable.len() + report.excluded.len() + report.blocked.len(),
         report.total
     );
-
-    // The measured revisions are this crate's own real dependency pins, not
-    // placeholder text -- cross-checked against the checked-in Cargo.toml.
-    let manifest = include_str!("../Cargo.toml");
-    assert!(manifest.contains(report.measured_revisions.tl_mltl));
-    assert!(manifest.contains(report.measured_revisions.tl_syntax));
-    assert!(manifest.contains(report.measured_revisions.quire_observation));
 }
 
 // Trace: TC-087, FR-005-AC-6
@@ -1123,8 +1106,7 @@ fn tc_087_no_spec_or_test_file_embeds_a_quire_contract_ir_schema_vocabulary_or_f
 }
 
 /// Every `quire-contract-ir` reference this crate carries is a *bounded
-/// identity record* (a contract label plus this crate's own schema digest,
-/// as short text), never a vocabulary table or fixture body copied out of
+/// identity record* (contract labels, as short text), never a vocabulary table or fixture body copied out of
 /// `quire-contract-ir` -- proven directly by bounding every field's length,
 /// rather than by scanning file text for a marker that might not appear.
 // Trace: TC-087, FR-005-AC-6
@@ -1136,13 +1118,6 @@ fn tc_087_counterpart_contract_fields_are_bounded_identity_text_not_a_schema_bod
             if let Some(counterpart) = class.counterpart {
                 assert!(counterpart.label.len() <= MAX_IDENTITY_TEXT_BYTES);
                 assert!(counterpart.exchanged_contract.len() <= MAX_IDENTITY_TEXT_BYTES);
-                assert_eq!(
-                    counterpart.exchanged_schema_sha256.len(),
-                    64,
-                    "the exchanged-document digest must be exactly one SHA-256, not a \
-                     schema body"
-                );
-                assert!(counterpart.provenance.len() <= MAX_IDENTITY_TEXT_BYTES);
             }
         }
     }

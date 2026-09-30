@@ -34,8 +34,8 @@ correspondence derivation, or agreement decision.
   [FR-001](./FR-001-admit-temporal-assessment-requests-and-results.md) already
   admits on `RequestInput`.
 - The exact `quire-contract-ir` predicate-projection and
-  temporal-correspondence contract identities and schema revisions the caller
-  selected, as identity text and digests, not as types.
+  temporal-correspondence contract identities the caller selected, as
+  identity text, not as types.
 - For a mapping: the constructor-private `ValidatedTemporalResult` and
   `MappingSelection` [FR-003](./FR-003-derive-contract-ir-result-mapping.md)
   requires.
@@ -116,17 +116,10 @@ This crate does not invent a representation for a refused class. A class that
 ought to be representable and is not is a specification finding for whichever
 side owns the gap, raised as such rather than closed with a local fallback.
 
-### Contract stability is part of the obligation
+### Contract labels are admitted strictly
 
 The consuming correspondence owner admits this crate's documents against an
-expected contract label, schema digest and revision. A silent change to the
-shape of `tl-mltl.temporal-assessment-request/v1`,
-`tl-mltl.temporal-assessment-result/v1`, or
-`tl-mltl.contract-ir-result-map/v1` would therefore invalidate that join
-without either side failing. Accordingly, quire-mltl SHALL NOT change the
-field set, field meaning, canonical byte form, or identity preimage of any of
-the three contracts without a successor contract label, and SHALL NOT reuse a
-label across two shapes. A strict reader SHALL refuse an unknown or
+expected contract label. A strict reader SHALL refuse an unknown or
 non-selected contract label rather than reading it permissively.
 
 ### What this requirement does not add
@@ -149,8 +142,7 @@ inside a request, and the crate's dependency graph stays `tl-mltl`,
 | FR-004-AC-4 | A correction chain preserves both identities unchanged at every revision; a superseding or invalidating result that would change either identity is refused. | Test |
 | FR-004-AC-5 | Every read-time-refused correspondence class — including at least an unsupported clock family and a disagreeing past-lane clock binding — is refused during `derive`/`read`, before any result or mapping document exists, as a typed `OwnerReadError` naming the disagreeing field, and produces no partial document; an over-ceiling resource case discovered at read time is likewise refused as a typed `OwnerReadError` and never as a `NonValueKind`. | Test |
 | FR-004-AC-6 | Every evaluation-time-refused correspondence class — including at least an incompatible semantic profile or lane and an over-ceiling resource case discovered during evaluation — yields a typed `NonValueKind` in the emitted result and mapping naming the exact refused dimension, and never a Boolean, a pending truth, a defaulted value, or a silently dropped outcome. | Test |
-| FR-004-AC-7 | A strict reader refuses a document whose contract label is unknown or is not the label the reader selected, and the field set, canonical byte form, and identity preimage of each of the three contracts are pinned by a test that fails when any of them changes without a successor label. | Test |
-| FR-004-AC-8 | No public operation accepts a native grammar, predicate parser or evaluator, catalog derivation, correspondence derivation, agreement decision, Boolean coercion, callback, plugin, or trust flag, and the crate manifest declares no `quire-contract-ir` dependency. | Test |
+| FR-004-AC-7 | No public operation accepts a native grammar, predicate parser or evaluator, catalog derivation, correspondence derivation, agreement decision, Boolean coercion, callback, plugin, or trust flag, and the crate manifest declares no `quire-contract-ir` dependency. | Test |
 
 ## Dependencies
 

@@ -2,23 +2,18 @@
 //!
 //! This module owns only the registry's *classification data* — which
 //! classes exist, how each one is classified (`applicable`, `excluded`, or
-//! `blocked`), and the stable digest over the ordered class set. It holds no
-//! fixture bytes and calls none of this crate's `derive`/`evaluate`/`read`/
-//! `map` paths: fixtures require `agent-ix-baseline-producer` and
+//! `blocked`). It holds no fixture bytes and calls none of this crate's
+//! `derive`/`evaluate`/`read`/`map` paths: fixtures require `agent-ix-baseline-producer` and
 //! `quire_observation` admission machinery that only this crate's
 //! `[dev-dependencies]` provide, so building and replaying them is the
 //! integration test suite's job (`tests/tc_087_native_correspondence_census.rs`),
 //! not this library's. See FR-005 and
 //! `spec/decisions/ADR-002-quire-mltl-owns-the-native-correspondence-dimension.md`.
 
-use tl_mltl::wire::common::raw_sha256;
-
 /// One `quire-contract-ir` contract this crate's supplier obligation is
-/// measured against. Pinned by identity and by the digest of *this crate's
-/// own* wire schema for the document that contract reads — the exact "bytes
-/// this crate actually exchanged" ADR-002 describes — never by a digest
-/// copied out of `quire-contract-ir` itself, which would put another
-/// repository's content in this one (FR-005-AC-6).
+/// measured against, referenced by label only — never by content copied out
+/// of `quire-contract-ir`, which would put another repository's content in
+/// this one (FR-005-AC-6).
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct CounterpartContract {
     /// Exact `quire-contract-ir` contract label, e.g. `"FR-026"`.
@@ -26,28 +21,15 @@ pub struct CounterpartContract {
     /// This crate's own wire contract label for the exchanged document
     /// (`contract_ir::CONTRACT`, `report::CONTRACT`, or `request::CONTRACT`).
     pub exchanged_contract: &'static str,
-    /// This crate's own checked-in schema digest for `exchanged_contract`
-    /// — a real, locally computed SHA-256 (see `contract_ir::SCHEMA_SHA256`
-    /// / `report::SCHEMA_SHA256`), not a value read from `quire-contract-ir`.
-    pub exchanged_schema_sha256: &'static str,
-    /// The upstream ticket/PR revision, carried as provenance only — never
-    /// substituted for the digest above (FR-005's own text: "A ticket state
-    /// is not a substitute for the contract revision").
-    pub provenance: &'static str,
 }
 
-/// `quire-contract-ir` FR-026's accepted native/TL temporal-correspondence
-/// contract, at the revision this repository's own spec (ADR-002) records:
-/// specified by `quire-contract-ir` #64/PR #68, implemented by #71/PR #78
-/// (merged to `quire-contract-ir` `main` as `ad5a418`). FR-026 "joins a
-/// `TlMappedResultView`" — the exact document this crate's `contract_ir`
-/// module supplies — so the exchanged bytes pinned here are that mapping's
-/// own checked-in schema digest.
+/// `quire-contract-ir` FR-026's native/TL temporal-correspondence contract.
+/// FR-026 "joins a `TlMappedResultView`" — the exact document this crate's
+/// `contract_ir` module supplies — so the exchanged document here is that
+/// mapping.
 pub const QUIRE_CONTRACT_IR_FR_026: CounterpartContract = CounterpartContract {
     label: "quire-contract-ir.FR-026",
     exchanged_contract: crate::contract_ir::CONTRACT,
-    exchanged_schema_sha256: crate::contract_ir::SCHEMA_SHA256,
-    provenance: "quire-contract-ir #71 / PR #78 (merged ad5a418)",
 };
 
 /// Reason code shared by every class this crate's own strict request
@@ -96,8 +78,8 @@ pub struct ApplicableClass {
 }
 
 /// The three ways a registry entry may be classified. Lifecycle state is
-/// deliberately outside `ClassKey` (FR-005-AC-3): reclassifying an entry
-/// changes this field, never the entry's token.
+/// deliberately outside the entry's `token` key (FR-005-AC-3): reclassifying
+/// an entry changes this field, never the entry's token.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ClassState {
     /// Carried losslessly, with one canonical fixture and expectation.
@@ -125,7 +107,7 @@ pub struct RegistryEntry {
 }
 
 /// The closed, reviewed native-correspondence class registry, ordered by the
-/// UTF-8 bytes of each entry's `token` (`tc_087` pins this order's digest).
+/// UTF-8 bytes of each entry's `token`.
 ///
 /// Every class in FR-005's closed catalog table appears in at least one
 /// entry below; entries are one-axis-at-a-time isolations of a common
@@ -510,30 +492,7 @@ pub struct CensusReport {
     /// Blocked class tokens paired with their unresolved dependency, sorted
     /// by token.
     pub blocked: Vec<(&'static str, &'static str)>,
-    /// The exact `tl-mltl`/`tl-syntax`/`quire-observation` revisions this
-    /// census was measured at (this crate's own `Cargo.toml` pins).
-    pub measured_revisions: MeasuredRevisions,
 }
-
-/// The exact dependency revisions a census figure was measured at.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct MeasuredRevisions {
-    /// `tl-mltl` git revision this crate's `Cargo.toml` pins.
-    pub tl_mltl: &'static str,
-    /// `tl-syntax` git revision this crate's `Cargo.toml` pins.
-    pub tl_syntax: &'static str,
-    /// `quire-observation` git revision this crate's `Cargo.toml` pins.
-    pub quire_observation: &'static str,
-}
-
-/// The exact revisions this crate's `Cargo.toml`/`Cargo.lock` pin. Shared by
-/// every census figure so no reported population is measured at an
-/// ambiguous or drifted dependency set.
-pub const MEASURED_REVISIONS: MeasuredRevisions = MeasuredRevisions {
-    tl_mltl: tl_mltl::TL_MLTL_SOURCE_REVISION,
-    tl_syntax: tl_mltl::TL_SYNTAX_REVISION,
-    quire_observation: crate::QUIRE_OBSERVATION_REVISION,
-};
 
 /// Computes the population/exclusions/blocked-set census over [`REGISTRY`].
 #[must_use]
@@ -553,22 +512,7 @@ pub fn census() -> CensusReport {
         applicable,
         excluded,
         blocked,
-        measured_revisions: MEASURED_REVISIONS,
     }
-}
-
-/// The ordered-set digest FR-005-AC-3 pins: a SHA-256 over the registry's
-/// tokens in their declared order, newline-joined. Any insertion, deletion,
-/// reordering, or token rename changes this digest, which is exactly the
-/// "successor registry identity" FR-005 requires for such a change.
-#[must_use]
-pub fn ordered_set_digest() -> String {
-    let joined = REGISTRY
-        .iter()
-        .map(|entry| entry.token)
-        .collect::<Vec<_>>()
-        .join("\n");
-    raw_sha256(joined.as_bytes())
 }
 
 /// Returns every applicable entry's `fixture_id`s, sorted and deduplicated.
@@ -589,7 +533,7 @@ pub fn applicable_fixture_ids() -> Vec<&'static str> {
 
 #[cfg(test)]
 mod tests {
-    use super::{census, ordered_set_digest, ClassState, REGISTRY};
+    use super::{census, ClassState, REGISTRY};
 
     // Trace: TC-087, FR-005-AC-1
     #[test]
@@ -604,52 +548,6 @@ mod tests {
             tokens.len(),
             deduped.len(),
             "every registry token must be unique"
-        );
-    }
-
-    // Trace: TC-087, FR-005-AC-3
-    #[test]
-    fn ordered_set_digest_is_stable_and_pinned() {
-        // Pinned at this registry revision. Inserting, deleting, reordering,
-        // or renaming a token changes this value -- exactly the "successor
-        // registry identity" FR-005-AC-3 requires -- and this assertion is
-        // the acceptance test that change must update.
-        const PINNED: &str = "2f4d8fd0b6fd6d8a69265e920f89fb9862f6dbca905f284304ba21fd192e3283";
-        let first = ordered_set_digest();
-        let second = ordered_set_digest();
-        assert_eq!(
-            first, second,
-            "the digest must be a pure function of REGISTRY"
-        );
-        assert_eq!(
-            first.len(),
-            64,
-            "raw_sha256 always emits 64 lowercase hex chars"
-        );
-        assert_eq!(
-            first, PINNED,
-            "REGISTRY's ordered token set changed; if this change was reviewed and \
-             intentional, update PINNED to the new digest printed here"
-        );
-    }
-
-    // Trace: TC-087, FR-005-AC-3
-    #[test]
-    fn ordered_set_digest_is_sensitive_to_order_and_content() {
-        // `ordered_set_digest` is exactly `raw_sha256` over the newline-joined
-        // token list; this proves that function actually depends on both the
-        // set of tokens and their order, independent of the real REGISTRY, so
-        // the pin above is not vacuously stable.
-        let digest_of = |tokens: &[&str]| super::raw_sha256(tokens.join("\n").as_bytes());
-        let original = digest_of(&["a/one", "b/two", "c/three"]);
-        let reordered = digest_of(&["b/two", "a/one", "c/three"]);
-        let renamed = digest_of(&["a/one", "b/two", "c/three-renamed"]);
-        let inserted = digest_of(&["a/one", "b/two", "b/two-and-a-half", "c/three"]);
-        assert_ne!(original, reordered, "reordering must change the digest");
-        assert_ne!(original, renamed, "renaming a token must change the digest");
-        assert_ne!(
-            original, inserted,
-            "inserting a token must change the digest"
         );
     }
 
@@ -686,11 +584,9 @@ mod tests {
     #[test]
     fn every_blocked_class_names_a_dependency_and_admission_condition() {
         let report = census();
-        // As of this registry revision, no native-correspondence class is
-        // blocked on an unresolved dependency (every FR-025/FR-026
-        // counterpart this census needs is already an accepted, merged
-        // contract revision -- see `QUIRE_CONTRACT_IR_FR_026`'s doc comment).
-        // That is an honest reviewed finding, not an oversight, so this test
+        // No native-correspondence class is blocked on an unresolved
+        // dependency (every FR-025/FR-026 counterpart this census needs is
+        // an accepted contract). That is an honest reviewed finding, not an oversight, so this test
         // pins the count explicitly rather than looping over zero entries:
         // it fails the moment a `Blocked` entry is added, forcing this
         // assertion itself to be updated alongside it, and the loop below

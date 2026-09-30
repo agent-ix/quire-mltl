@@ -25,16 +25,7 @@ quire-mltl SHALL bind them into one immutable canonical
 profile, and emit one immutable canonical `tl-mltl.temporal-assessment-result/v1`
 document. This requirement ports `tl-mltl`'s `wire::request` and `wire::report`
 modules unchanged in behavior; it does not add, remove, or reinterpret any
-evaluation semantic they already carry. The one exception is the
-`observationRevision` wire field: `tl-mltl`'s current `QUIRE_OBSERVATION_REVISION`
-constant (`924006300f45b38483be1cbdf99b68f899b7d368`, `src/lib.rs`) has drifted
-from `tl-mltl`'s own Cargo pin (`2bdeb833a330bfa777c19eb4c28c423f856f3ba6`)
-since commit `7638e2c` re-pinned the dependency without updating the constant
-or the test that checks it. quire-mltl's port re-derives this constant from
-its own Cargo pin (see [FR-002](./FR-002-dispatch-qobs-c00-compatibility.md))
-rather than porting the drift forward, so the `observationRevision` value this
-crate emits is not byte-for-byte identical to `tl-mltl`'s current (stale)
-output for the same inputs.
+evaluation semantic they already carry.
 
 ## Inputs
 
@@ -97,7 +88,7 @@ output for the same inputs.
   begins.
 - The request retains the formula, proposition map, trace/history, and all
   four progress/closure owner assertions as exact `ArtifactReference`s
-  (contract, schema digest, content identity, revision, byte digest), and
+  (contract, content identity, revision, byte digest), and
   retains the completeness and availability assertions with their full owner
   fact population. Of these, only the clock, the four progress/closure axes
   (decision-scope progress/closure, surrounding-execution progress/closure),
@@ -109,9 +100,9 @@ output for the same inputs.
   that document's own canonical bytes — computed from the supplied
   formula/proposition-map documents, not copied from any `quire_observation`
   owner view. The evaluator reference is not an `ArtifactReference` at all: it
-  is a distinct `EvaluatorReference` (identity, revision, implementation
-  digest) synthesized entirely in-crate from the request's selected lane and
-  the compiled source revision, not read or echoed from any supplied input.
+  is a distinct `EvaluatorReference` (the closed evaluator identity)
+  synthesized entirely in-crate from the request's selected lane, not read or
+  echoed from any supplied input.
 - The clock's subject/authority SHALL agree with the decision-scope
   progress/closure subject/authority, and the completeness and availability
   assertions SHALL agree with that same subject/authority and population
@@ -152,9 +143,8 @@ output for the same inputs.
   predecessor reference.
 - Every reader independently re-derives the applicable identity from the
   decoded document's own canonical bytes and rejects a document whose
-  recomputed identity disagrees, whose contract label is wrong, whose
-  dependency revisions (`tl-syntax`, `quire-observation`) or limits disagree
-  with the compiled crate, or whose execution/truth/settlement/relation
+  recomputed identity disagrees, whose contract label is wrong, whose limits
+  disagree with the caller-supplied limits, or whose execution/truth/settlement/relation
   combination is not one of the valid combinations above.
 
 ## Constraints

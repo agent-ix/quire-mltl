@@ -46,7 +46,7 @@ Quire-independent evaluator and Quire's own observation authority. Under PGM-01-
 classification criterion, that seam role makes `quire-mltl` itself a
 Quire-owned program repository, not merely a consumer of one; PGM-01 at
 `ix://agent-ix/quire-contract-ir/PGM-01` therefore governs this crate's
-compatibility, provenance, evidence, human authority, and qualification
+compatibility, evidence, human authority, and qualification
 boundaries directly, the same way it would govern any other Quire-owned
 program repository. The two repositories are not inconsistent with each other
 — they are the two halves of the same boundary, each stating its own
@@ -69,7 +69,7 @@ governance posture correctly.
   `tl-mltl`'s `wire::observation`): delegates the supported temporal handoff
   to request derivation with no duplicated evaluation or observation-authority
   logic, and returns an explicit typed unsupported outcome — naming the exact
-  foreign contract and compiled QObs revision — for the QObs-owned
+  foreign contract — for the QObs-owned
   repair-plan and closed-population-query contracts, without accepting,
   inspecting, or mutating either artifact.
 - Deriving a TL-owned `tl-mltl.contract-ir-result-map/v1` value-or-typed-non-value
@@ -82,11 +82,11 @@ governance posture correctly.
 - Lossless preservation of the native subject and correspondence identities a
   request carries, across the request, the result and the Contract-IR mapping,
   with a typed non-value for any correspondence class this crate cannot
-  represent and a successor-label rule on the three contracts a consumer
-  admits by identity.
+  represent, and strict refusal of an unknown contract label on the three
+  contracts a consumer admits by label.
 - A closed, reviewed census of the native-correspondence classes the bridge
   carries losslessly, with one canonical fixture and one independently derived
-  expected outcome per applicable class and exact-digest replay.
+  expected outcome per applicable class, and replay of each one.
 
 ### Out of Scope
 
@@ -132,10 +132,10 @@ result evaluation. FR-002 owns the QObs C00 compatibility dispatch boundary
 and depends on FR-001 for its one supported branch. FR-003 owns the
 Contract-IR result mapping and depends on FR-001 for the validated result it
 maps. FR-004 owns native-correspondence identity preservation, the typed
-refusal of an unrepresentable class, and contract-label stability across all
-three documents. FR-005 owns the closed correspondence-class census and its
-exact-digest replay. NFR-001 constrains this crate's governance, provenance,
-and qualification boundary under PGM-01.
+refusal of an unrepresentable class, and strict contract-label admission
+across all three documents. FR-005 owns the closed correspondence-class census and its
+replay. NFR-001 constrains this crate's governance and qualification boundary
+under PGM-01.
 
 ### Why the native-correspondence dimension is here
 

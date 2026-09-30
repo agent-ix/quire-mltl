@@ -27,8 +27,6 @@ pub const CONTRACT: &str = "quire-mltl.temporal-assessment-result/v1";
 /// Exact checked-in JSON Schema bytes for [`CONTRACT`].
 pub const SCHEMA_BYTES: &[u8] =
     include_bytes!("../schemas/temporal-assessment-result-v1.schema.json");
-/// Lowercase SHA-256 digest of [`SCHEMA_BYTES`].
-pub const SCHEMA_SHA256: &str = "781625413bcbf896f51d44540940a67e6f68bda0c2309b4dc2d09b12d7c37134";
 
 /// Closed execution disposition for one admitted request.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -436,7 +434,6 @@ fn build_wire(
         revision,
         request: ArtifactReference {
             contract: super::request::CONTRACT.to_owned(),
-            schema_sha256: super::request::SCHEMA_SHA256.to_owned(),
             identity: request.identity().to_owned(),
             revision: 1,
             digest: raw_sha256(request.bytes()),

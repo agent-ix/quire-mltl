@@ -1,10 +1,6 @@
 //! Canonical `quire-mltl.temporal-assessment-request/v1` owner boundary.
 //!
-//! Ported from `tl-mltl`'s `wire::request` (TL-178/TL-175). Behavior is
-//! unchanged except for the `observationRevision` wire field, which this
-//! crate re-derives from its own `Cargo.toml` `quire-observation` pin
-//! ([`crate::QUIRE_OBSERVATION_REVISION`]) rather than carrying forward
-//! `tl-mltl`'s existing (drifted) constant. See FR-001.
+//! Ported from `tl-mltl`'s `wire::request` (TL-178/TL-175). See FR-001.
 
 use quire_observation::authority::{
     availability, clock, closure, completeness, progress, OpenClosed,
@@ -13,14 +9,13 @@ use serde::{Deserialize, Serialize};
 use tl_syntax::{
     FormulaDocument, FormulaSchemaVersion, PropositionMapDocument, SemanticProfile,
     StrictDocumentReadError, SyntaxArtifactLimits, PAST_OPERATORS_V1,
-    PROPOSITION_MAP_V1_SCHEMA_SHA256,
 };
 
 use tl_mltl::wire::common::{identity, is_sha256, produce, raw_sha256, read_expected};
 use tl_mltl::wire::{OwnerLimits, OwnerReadError, OwnerReadErrorCode, OwnerUsage, ValidatedTrace};
 use tl_mltl::{
     past::history::ValidatedPositionHistory, ClockBinding, PositionHistoryDocument,
-    PAST_EVALUATOR_V1, TL_MLTL_SOURCE_REVISION, TL_SYNTAX_REVISION,
+    PAST_EVALUATOR_V1,
 };
 
 /// Immutable request contract label.
@@ -28,8 +23,6 @@ pub const CONTRACT: &str = "quire-mltl.temporal-assessment-request/v1";
 /// Exact checked-in JSON Schema bytes for [`CONTRACT`].
 pub const SCHEMA_BYTES: &[u8] =
     include_bytes!("../schemas/temporal-assessment-request-v1.schema.json");
-/// Lowercase SHA-256 digest of [`SCHEMA_BYTES`].
-pub const SCHEMA_SHA256: &str = "9db8c1b77dbddface8ec65273fd859d38456e186f11be987ec756fe828ada618";
 
 /// Closed temporal evaluator lane.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -46,7 +39,6 @@ pub enum TemporalLane {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ArtifactReference {
     pub(crate) contract: String,
-    pub(crate) schema_sha256: String,
     pub(crate) identity: String,
     pub(crate) revision: u64,
     pub(crate) digest: String,
@@ -57,8 +49,6 @@ pub struct ArtifactReference {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct EvaluatorReference {
     identity: String,
-    revision: String,
-    implementation_digest: String,
 }
 
 impl EvaluatorReference {
@@ -67,18 +57,6 @@ impl EvaluatorReference {
     pub fn identity(&self) -> &str {
         &self.identity
     }
-
-    /// Exact source revision compiled into the evaluator.
-    #[must_use]
-    pub fn revision(&self) -> &str {
-        &self.revision
-    }
-
-    /// Digest binding the exact selected implementation revision.
-    #[must_use]
-    pub fn implementation_digest(&self) -> &str {
-        &self.implementation_digest
-    }
 }
 
 impl ArtifactReference {
@@ -86,12 +64,6 @@ impl ArtifactReference {
     #[must_use]
     pub fn contract(&self) -> &str {
         &self.contract
-    }
-
-    /// Exact schema digest.
-    #[must_use]
-    pub fn schema_sha256(&self) -> &str {
-        &self.schema_sha256
     }
 
     /// Exact document/content identity.
@@ -375,8 +347,6 @@ pub(crate) struct RequestWire {
     pub(crate) correspondence_identity: String,
     pub(crate) anchor: u64,
     pub(crate) evaluator: EvaluatorReference,
-    pub(crate) syntax_revision: String,
-    pub(crate) observation_revision: String,
     pub(crate) decision_scope_progress: AxisReference,
     pub(crate) decision_scope_closure: AxisReference,
     pub(crate) surrounding_execution_progress: AxisReference,
@@ -670,7 +640,6 @@ fn build_wire(
                     InputReference::Future {
                         trace: ArtifactReference {
                             contract: tl_mltl::wire::trace::CONTRACT.to_owned(),
-                            schema_sha256: tl_mltl::wire::trace::SCHEMA_SHA256.to_owned(),
                             identity: document.trace_id.clone(),
                             revision: 1,
                             digest: raw_sha256(trace.bytes()),
@@ -702,7 +671,6 @@ fn build_wire(
                     InputReference::Past {
                         history: ArtifactReference {
                             contract: tl_mltl::POSITION_HISTORY_V1.to_owned(),
-                            schema_sha256: tl_mltl::past::history::SCHEMA_SHA256.to_owned(),
                             identity: history_document.history_id().to_owned(),
                             revision: history_document.revision(),
                             digest: raw_sha256(history_bytes),
@@ -726,13 +694,8 @@ fn build_wire(
     validate_clock_scope(input.clock, input.observations, input.input, positions)?;
 
     let formula_contract = formula.schema_version().as_str();
-    let formula_schema = match formula.schema_version() {
-        FormulaSchemaVersion::V1 => tl_syntax::FORMULA_V1_SCHEMA_SHA256,
-        FormulaSchemaVersion::V2 => tl_syntax::FORMULA_V2_SCHEMA_SHA256,
-    };
     let formula_ref = ArtifactReference {
         contract: formula_contract.to_owned(),
-        schema_sha256: formula_schema.to_owned(),
         identity: formula
             .content_identity()
             .map_err(|_| encoding("formulaIdentity"))?,
@@ -741,7 +704,6 @@ fn build_wire(
     };
     let proposition_ref = ArtifactReference {
         contract: input.proposition_map.schema_version().as_str().to_owned(),
-        schema_sha256: PROPOSITION_MAP_V1_SCHEMA_SHA256.to_owned(),
         identity: proposition_map
             .content_identity()
             .map_err(|_| encoding("propositionMapIdentity"))?,
@@ -757,7 +719,7 @@ fn build_wire(
         formula: formula_ref,
         input: input_reference,
         proposition_map: proposition_ref,
-        clock: artifact_from_view(clock::CONTRACT, clock::SCHEMA_SHA256, input.clock),
+        clock: artifact_from_view(clock::CONTRACT, input.clock),
         clock_identity: input.clock.payload().clock_identity().to_owned(),
         clock_revision: input.clock.payload().clock_revision().to_owned(),
         subject_identity: input.subject_identity.to_owned(),
@@ -769,11 +731,7 @@ fn build_wire(
             } else {
                 "tl-mltl.future-evaluator/v1".to_owned()
             },
-            revision: TL_MLTL_SOURCE_REVISION.to_owned(),
-            implementation_digest: raw_sha256(TL_MLTL_SOURCE_REVISION.as_bytes()),
         },
-        syntax_revision: TL_SYNTAX_REVISION.to_owned(),
-        observation_revision: crate::QUIRE_OBSERVATION_REVISION.to_owned(),
         decision_scope_progress: progress_axis(input.observations.decision_scope_progress),
         decision_scope_closure: closure_axis(input.observations.decision_scope_closure),
         surrounding_execution_progress: progress_axis(
@@ -812,11 +770,8 @@ fn validate_wire(
             usage,
         ));
     }
-    if wire.syntax_revision != TL_SYNTAX_REVISION
-        || wire.observation_revision != crate::QUIRE_OBSERVATION_REVISION
-        || wire.limits != limits_wire(limits)?
-    {
-        return Err(mismatch_with_usage("dependencyOrLimits", usage));
+    if wire.limits != limits_wire(limits)? {
+        return Err(mismatch_with_usage("limits", usage));
     }
     if !is_sha256(&wire.identity) || identity(CONTRACT, wire, "identity")? != wire.identity {
         return Err(OwnerReadError::new(
@@ -838,10 +793,7 @@ fn validate_wire(
     ] {
         validate_artifact(artifact, usage)?;
     }
-    if wire.evaluator.identity.is_empty()
-        || wire.evaluator.revision.is_empty()
-        || !is_sha256(&wire.evaluator.implementation_digest)
-    {
+    if wire.evaluator.identity.is_empty() {
         return Err(mismatch_with_usage("evaluator", usage));
     }
     Ok(usage)
@@ -1015,7 +967,7 @@ fn validate_axis_pair(
 
 fn progress_axis(view: &progress::View) -> AxisReference {
     AxisReference {
-        artifact: artifact_from_view(progress::CONTRACT, progress::SCHEMA_SHA256, view),
+        artifact: artifact_from_view(progress::CONTRACT, view),
         authority_identity: view.authority().definition_identity.as_str().to_owned(),
         authority_revision: view.authority().definition_revision.as_str().to_owned(),
         authority_digest: digest_hex(view.authority().definition_digest.as_bytes()),
@@ -1027,7 +979,7 @@ fn progress_axis(view: &progress::View) -> AxisReference {
 
 fn closure_axis(view: &closure::View) -> AxisReference {
     AxisReference {
-        artifact: artifact_from_view(closure::CONTRACT, closure::SCHEMA_SHA256, view),
+        artifact: artifact_from_view(closure::CONTRACT, view),
         authority_identity: view.authority().definition_identity.as_str().to_owned(),
         authority_revision: view.authority().definition_revision.as_str().to_owned(),
         authority_digest: digest_hex(view.authority().definition_digest.as_bytes()),
@@ -1039,7 +991,7 @@ fn closure_axis(view: &closure::View) -> AxisReference {
 
 fn completeness_ref(view: &completeness::View) -> CompletenessReference {
     CompletenessReference {
-        artifact: artifact_from_view(completeness::CONTRACT, completeness::SCHEMA_SHA256, view),
+        artifact: artifact_from_view(completeness::CONTRACT, view),
         population_identity: view.payload().population_identity().to_owned(),
         boundary_identity: view.payload().boundary_identity().to_owned(),
         facts: view
@@ -1057,7 +1009,7 @@ fn completeness_ref(view: &completeness::View) -> CompletenessReference {
 
 fn availability_ref(view: &availability::View) -> AvailabilityReference {
     AvailabilityReference {
-        artifact: artifact_from_view(availability::CONTRACT, availability::SCHEMA_SHA256, view),
+        artifact: artifact_from_view(availability::CONTRACT, view),
         required_results: view.payload().required_results().to_vec(),
         available_results: view.payload().available_results().to_vec(),
         state: view.payload().state(),
@@ -1094,14 +1046,9 @@ observation_view!(closure::View);
 observation_view!(completeness::View);
 observation_view!(availability::View);
 
-fn artifact_from_view<V: ObservationView>(
-    contract: &str,
-    schema_sha256: &str,
-    view: &V,
-) -> ArtifactReference {
+fn artifact_from_view<V: ObservationView>(contract: &str, view: &V) -> ArtifactReference {
     ArtifactReference {
         contract: contract.to_owned(),
-        schema_sha256: schema_sha256.to_owned(),
         identity: view.document_identity().to_owned(),
         revision: view.document_revision(),
         digest: raw_sha256(view.document_bytes()),
@@ -1115,7 +1062,6 @@ fn validate_artifact(
     if artifact.contract.is_empty()
         || artifact.identity.is_empty()
         || artifact.revision == 0
-        || !is_sha256(&artifact.schema_sha256)
         || !is_sha256(&artifact.digest)
     {
         return Err(mismatch_with_usage("artifactReference", usage));

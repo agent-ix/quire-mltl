@@ -11,7 +11,6 @@ use quire_observation::authority::{query, repair};
 use tl_mltl::wire::{OwnerLimits, OwnerReadError};
 
 use crate::request;
-use crate::QUIRE_OBSERVATION_REVISION;
 
 /// Exact QObs C00 repair-plan contract not consumed by quire-mltl.
 pub const REPAIR_PLAN_CONTRACT: &str = repair::CONTRACT;
@@ -59,12 +58,6 @@ impl Unsupported {
     pub const fn contract_label(self) -> &'static str {
         self.contract.label()
     }
-
-    /// Returns the exact compiled QObs revision at which support was assessed.
-    #[must_use]
-    pub const fn observation_revision(self) -> &'static str {
-        QUIRE_OBSERVATION_REVISION
-    }
 }
 
 /// Machine-matchable declaration of one QObs contract consumed by TL.
@@ -84,12 +77,6 @@ impl Supported {
     #[must_use]
     pub const fn contract_label(self) -> &'static str {
         self.contract.label()
-    }
-
-    /// Returns the exact compiled QObs revision at which support was assessed.
-    #[must_use]
-    pub const fn observation_revision(self) -> &'static str {
-        QUIRE_OBSERVATION_REVISION
     }
 }
 

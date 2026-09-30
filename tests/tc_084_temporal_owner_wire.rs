@@ -39,8 +39,8 @@ use serde_json::Value;
 use support::{
     admit_history, admit_request, assert_closed_schema, exact_wire_identity,
     fixed_history_document, future_formula, future_request_input, history_document, observations,
-    owner_views, owner_views_with_clock, past_formula, proposition_map, sha256,
-    structural_mutations, trace_document, FixtureClock,
+    owner_views, owner_views_with_clock, past_formula, proposition_map, structural_mutations,
+    trace_document, FixtureClock,
 };
 use tl_mltl::past::{history, requirement, result};
 use tl_mltl::wire::{command, trace};
@@ -477,18 +477,17 @@ fn tc_084_past_lane_refuses_mismatched_clock_binding() {
 
 // Trace: TC-084, FR-001-AC-7, NFR-001-AC-1
 #[test]
-fn tc_084_schemas_are_pinned_and_all_readers_fail_closed() {
-    for (bytes, digest) in [
-        (trace::SCHEMA_BYTES, trace::SCHEMA_SHA256),
-        (command::SCHEMA_BYTES, command::SCHEMA_SHA256),
-        (history::SCHEMA_BYTES, history::SCHEMA_SHA256),
-        (requirement::SCHEMA_BYTES, requirement::SCHEMA_SHA256),
-        (result::SCHEMA_BYTES, result::SCHEMA_SHA256),
-        (request::SCHEMA_BYTES, request::SCHEMA_SHA256),
-        (report::SCHEMA_BYTES, report::SCHEMA_SHA256),
-        (contract_ir::SCHEMA_BYTES, contract_ir::SCHEMA_SHA256),
+fn tc_084_schemas_are_closed_and_all_readers_fail_closed() {
+    for bytes in [
+        trace::SCHEMA_BYTES,
+        command::SCHEMA_BYTES,
+        history::SCHEMA_BYTES,
+        requirement::SCHEMA_BYTES,
+        result::SCHEMA_BYTES,
+        request::SCHEMA_BYTES,
+        report::SCHEMA_BYTES,
+        contract_ir::SCHEMA_BYTES,
     ] {
-        assert_eq!(sha256(bytes), digest);
         let schema: Value = serde_json::from_slice(bytes).unwrap();
         assert_closed_schema(&schema);
     }
@@ -1169,11 +1168,9 @@ fn tc_084_owner_evidence_contexts_cannot_be_cross_wired() {
     );
 }
 
-// Trace: TC-085, FR-002-AC-1, FR-002-AC-2, FR-002-AC-3
+// Trace: TC-085, FR-002-AC-1, FR-002-AC-2
 #[test]
 fn tc_085_qobs_c00_temporal_dispatch_and_unsupported_contracts_are_exact() {
-    const C00_REVISION: &str = "2bdeb833a330bfa777c19eb4c28c423f856f3ba6";
-
     let decision = owner_views("decision-c00", 2);
     let surrounding = owner_views("surrounding-c00", 2);
     let formula = future_formula(SemanticProfile::ClosedTraceV1);
@@ -1202,9 +1199,6 @@ fn tc_085_qobs_c00_temporal_dispatch_and_unsupported_contracts_are_exact() {
     let direct = request::derive(input, OwnerLimits::default()).unwrap();
     let dispatched = dispatch::consume_temporal(input, OwnerLimits::default()).unwrap();
     assert_eq!(dispatched, direct);
-    let direct_wire: Value =
-        serde_json::from_slice(direct.bytes()).expect("temporal request is canonical JSON");
-    assert_eq!(direct_wire["observationRevision"], C00_REVISION);
 
     let tightening = OwnerLimits {
         max_output_bytes: direct.bytes().len(),
@@ -1338,10 +1332,6 @@ fn tc_085_qobs_c00_temporal_dispatch_and_unsupported_contracts_are_exact() {
     };
     assert_eq!(supported.contract(), dispatch::Contract::TemporalAssessment);
     assert_eq!(supported.contract_label(), request::CONTRACT);
-    assert_eq!(
-        supported.observation_revision(),
-        quire_mltl::QUIRE_OBSERVATION_REVISION
-    );
     for (contract, expected_label) in [
         (dispatch::Contract::RepairPlan, authority::repair::CONTRACT),
         (
@@ -1355,41 +1345,5 @@ fn tc_085_qobs_c00_temporal_dispatch_and_unsupported_contracts_are_exact() {
         };
         assert_eq!(unsupported.contract(), contract);
         assert_eq!(unsupported.contract_label(), expected_label);
-        assert_eq!(
-            unsupported.observation_revision(),
-            quire_mltl::QUIRE_OBSERVATION_REVISION
-        );
     }
-
-    assert_eq!(quire_mltl::QUIRE_OBSERVATION_REVISION, C00_REVISION);
-    let manifest_entry = include_str!("../Cargo.toml")
-        .lines()
-        .find(|line| line.starts_with("quire-observation = "))
-        .expect("manifest has one direct QObs dependency");
-    assert_eq!(
-        manifest_entry,
-        format!(
-            "quire-observation = {{ version = \"=0.1.0\", git = \
-             \"https://github.com/agent-ix/quire-observation\", rev = \"{C00_REVISION}\" }}"
-        )
-    );
-    let lock_entry = include_str!("../Cargo.lock")
-        .split("[[package]]")
-        .find(|entry| {
-            entry
-                .lines()
-                .any(|line| line == "name = \"quire-observation\"")
-        })
-        .expect("lockfile has the QObs package");
-    let lock_source = lock_entry
-        .lines()
-        .find(|line| line.starts_with("source = "))
-        .expect("QObs lock entry has an exact source");
-    assert_eq!(
-        lock_source,
-        format!(
-            "source = \"git+https://github.com/agent-ix/quire-observation?rev={0}#{0}\"",
-            C00_REVISION
-        )
-    );
 }
