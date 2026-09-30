@@ -86,7 +86,7 @@ governance posture correctly.
   admits by identity.
 - A closed, reviewed census of the native-correspondence classes the bridge
   carries losslessly, with one canonical fixture and one independently derived
-  expected outcome per applicable class and exact-digest replay.
+  expected outcome per applicable class, and replay of each one.
 
 ### Out of Scope
 

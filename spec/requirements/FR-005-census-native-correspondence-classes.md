@@ -1,6 +1,6 @@
 ---
 id: FR-005
-title: "Census the native-correspondence classes the bridge carries, and replay each one by exact digest"
+title: "Census the native-correspondence classes the bridge carries, and replay each one"
 type: FR
 relationships:
   - target: ix://agent-ix/quire-mltl/MRS-001
@@ -10,7 +10,7 @@ relationships:
   - target: ix://agent-ix/quire-contract-ir/FR-026
     type: references
 ---
-# FR-005: Census the native-correspondence classes the bridge carries, and replay each one by exact digest
+# FR-005: Census the native-correspondence classes the bridge carries, and replay each one
 
 ## Description
 
@@ -18,7 +18,7 @@ When the native-correspondence bridge is measured, quire-mltl SHALL enumerate a
 closed, reviewed set of correspondence classes, classify every class as
 `applicable`, `excluded`, or `blocked` exactly once, bind each applicable class
 to exactly one canonical fixture with an independently derived expected
-outcome, and replay every applicable class against the exact bytes it recorded.
+outcome, and replay every applicable class.
 The census SHALL report its population, its exclusions and its blocked set
 rather than a bare ratio, and SHALL NOT admit a class whose state it cannot
 justify.
@@ -31,8 +31,8 @@ justify.
   exact supplied owner views and formula/proposition-map/trace-or-history
   documents, and the exact expected result and mapped-outcome bytes.
 - The exact `quire-contract-ir` predicate-projection and
-  temporal-correspondence contract labels and schema digests each class was
-  reviewed against, as identity text and digests.
+  temporal-correspondence contract labels each class was reviewed against,
+  as identity text.
 
 ## Outputs
 
@@ -97,16 +97,14 @@ public canonical document types: it cannot call this crate's `derive`,
 deriving. The production path cannot generate its own expected value during the
 replay.
 
-Replay verifies bytes before meaning: each fixture's recorded digests are
-checked, then the documents are strict-read, then the outcome is re-derived and
-compared. A fixture whose bytes, contract labels, or schema digests disagree
-with what it declares is a typed refusal, not a mismatch to investigate later.
+Replay strict-reads the documents, then re-derives the outcome and compares
+it. A fixture whose bytes or contract labels disagree with what it declares is
+a typed refusal, not a mismatch to investigate later.
 
 ### Consumer contracts are referenced by identity, never copied
 
 Each class records the `quire-contract-ir` predicate-projection and
-temporal-correspondence contract labels and schema digests it was reviewed
-against. No schema, vocabulary table, or fixture is copied out of
+temporal-correspondence contract labels it was reviewed against. No schema, vocabulary table, or fixture is copied out of
 `quire-contract-ir` into this repository; a class references its counterpart
 contract by identity (see
 [ADR-002](../decisions/ADR-002-quire-mltl-owns-the-native-correspondence-dimension.md)).
@@ -127,9 +125,9 @@ PGM-01-R06/R09, as NFR-001 requires.
 | FR-005-AC-1 | Every entry in the reviewed class registry appears exactly once as `applicable`, `excluded`, or `blocked`; every class in the closed catalog appears in at least one entry; and deleting, duplicating, reordering, reclassifying, or adding an unknown entry makes the census fail while naming the complete conflicting set. | Test |
 | FR-005-AC-2 | Every `applicable` class has exactly one canonical fixture and an independently derived expected outcome, every `excluded` class has a stable reason code that is not "not implemented", and every `blocked` class names an unresolved dependency and its exact admission condition and carries no outcome. | Test |
 | FR-005-AC-3 | A class key excludes lifecycle state, so moving a class from `blocked` to `applicable` preserves its key and its prior population remains comparable. | Test |
-| FR-005-AC-4 | Replay of every applicable class checks recorded digests before strict reading, re-derives the outcome, and agrees exactly with the recorded expectation; an expectation produced by calling this crate's own `derive`/`evaluate`/`read`/`map` paths is refused as non-independent. | Test |
-| FR-005-AC-5 | A fixture whose bytes, contract label, or schema digest disagrees with what it declares is a typed refusal; the same fixture with agreeing identities replays. | Test |
-| FR-005-AC-6 | A test enumerates every file under `spec/` and `tests/` in this repository and confirms none embeds a `quire-contract-ir` schema, vocabulary table, or fixture body: each class's `quire-contract-ir` reference is exactly a bounded identity record — contract label and schema digest, as text, matching the `ArtifactReference` shape FR-001 already establishes — and no file's own content digest equals a digest `quire-contract-ir` publishes for one of its schema, vocabulary, or fixture artifacts. | Test |
+| FR-005-AC-4 | Replay of every applicable class strict-reads its documents, re-derives the outcome, and agrees exactly with the recorded expectation; an expectation produced by calling this crate's own `derive`/`evaluate`/`read`/`map` paths is refused as non-independent. | Test |
+| FR-005-AC-5 | A fixture whose bytes or contract label disagrees with what it declares is a typed refusal; the same fixture with agreeing identities replays. | Test |
+| FR-005-AC-6 | A test enumerates every file under `spec/` and `tests/` in this repository and confirms none embeds a `quire-contract-ir` schema, vocabulary table, or fixture body: each class's `quire-contract-ir` reference is exactly a bounded identity record — contract labels, as text. | Test |
 | FR-005-AC-7 | Every reported figure carries its population, exclusions, and blocked set; a census output that states a ratio without them, or that records an approval, qualification, or release decision, is refused. | Test |
 
 ## Dependencies

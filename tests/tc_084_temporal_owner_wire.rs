@@ -39,8 +39,8 @@ use serde_json::Value;
 use support::{
     admit_history, admit_request, assert_closed_schema, exact_wire_identity,
     fixed_history_document, future_formula, future_request_input, history_document, observations,
-    owner_views, owner_views_with_clock, past_formula, proposition_map, sha256,
-    structural_mutations, trace_document, FixtureClock,
+    owner_views, owner_views_with_clock, past_formula, proposition_map, structural_mutations,
+    trace_document, FixtureClock,
 };
 use tl_mltl::past::{history, requirement, result};
 use tl_mltl::wire::{command, trace};
@@ -477,18 +477,17 @@ fn tc_084_past_lane_refuses_mismatched_clock_binding() {
 
 // Trace: TC-084, FR-001-AC-7, NFR-001-AC-1
 #[test]
-fn tc_084_schemas_are_pinned_and_all_readers_fail_closed() {
-    for (bytes, digest) in [
-        (trace::SCHEMA_BYTES, trace::SCHEMA_SHA256),
-        (command::SCHEMA_BYTES, command::SCHEMA_SHA256),
-        (history::SCHEMA_BYTES, history::SCHEMA_SHA256),
-        (requirement::SCHEMA_BYTES, requirement::SCHEMA_SHA256),
-        (result::SCHEMA_BYTES, result::SCHEMA_SHA256),
-        (request::SCHEMA_BYTES, request::SCHEMA_SHA256),
-        (report::SCHEMA_BYTES, report::SCHEMA_SHA256),
-        (contract_ir::SCHEMA_BYTES, contract_ir::SCHEMA_SHA256),
+fn tc_084_schemas_are_closed_and_all_readers_fail_closed() {
+    for bytes in [
+        trace::SCHEMA_BYTES,
+        command::SCHEMA_BYTES,
+        history::SCHEMA_BYTES,
+        requirement::SCHEMA_BYTES,
+        result::SCHEMA_BYTES,
+        request::SCHEMA_BYTES,
+        report::SCHEMA_BYTES,
+        contract_ir::SCHEMA_BYTES,
     ] {
-        assert_eq!(sha256(bytes), digest);
         let schema: Value = serde_json::from_slice(bytes).unwrap();
         assert_closed_schema(&schema);
     }

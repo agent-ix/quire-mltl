@@ -19,8 +19,6 @@ use crate::request::ArtifactReference;
 pub const CONTRACT: &str = "quire-mltl.contract-ir-result-map/v1";
 /// Exact checked-in JSON Schema bytes for [`CONTRACT`].
 pub const SCHEMA_BYTES: &[u8] = include_bytes!("../schemas/contract-ir-result-map-v1.schema.json");
-/// Lowercase SHA-256 digest of [`SCHEMA_BYTES`].
-pub const SCHEMA_SHA256: &str = "0e0c53507d02380e3d9e6095190e24793ae72c8811abd1513630c2c52c0b5a90";
 
 /// Closed typed reason why the TL result does not project to a Boolean value.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -238,7 +236,6 @@ fn build_wire(
         identity: String::new(),
         source_result: ArtifactReference {
             contract: crate::report::CONTRACT.to_owned(),
-            schema_sha256: crate::report::SCHEMA_SHA256.to_owned(),
             identity: result.identity().to_owned(),
             revision: result.revision(),
             digest: raw_sha256(result.bytes()),

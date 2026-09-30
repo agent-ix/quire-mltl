@@ -88,7 +88,7 @@ evaluation semantic they already carry.
   begins.
 - The request retains the formula, proposition map, trace/history, and all
   four progress/closure owner assertions as exact `ArtifactReference`s
-  (contract, schema digest, content identity, revision, byte digest), and
+  (contract, content identity, revision, byte digest), and
   retains the completeness and availability assertions with their full owner
   fact population. Of these, only the clock, the four progress/closure axes
   (decision-scope progress/closure, surrounding-execution progress/closure),

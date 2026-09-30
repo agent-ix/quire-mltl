@@ -11,11 +11,9 @@
 //! `spec/decisions/ADR-002-quire-mltl-owns-the-native-correspondence-dimension.md`.
 
 /// One `quire-contract-ir` contract this crate's supplier obligation is
-/// measured against. Pinned by identity and by the digest of *this crate's
-/// own* wire schema for the document that contract reads — the exact "bytes
-/// this crate actually exchanged" ADR-002 describes — never by a digest
-/// copied out of `quire-contract-ir` itself, which would put another
-/// repository's content in this one (FR-005-AC-6).
+/// measured against, referenced by label only — never by content copied out
+/// of `quire-contract-ir`, which would put another repository's content in
+/// this one (FR-005-AC-6).
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct CounterpartContract {
     /// Exact `quire-contract-ir` contract label, e.g. `"FR-026"`.
@@ -23,10 +21,6 @@ pub struct CounterpartContract {
     /// This crate's own wire contract label for the exchanged document
     /// (`contract_ir::CONTRACT`, `report::CONTRACT`, or `request::CONTRACT`).
     pub exchanged_contract: &'static str,
-    /// This crate's own checked-in schema digest for `exchanged_contract`
-    /// — a real, locally computed SHA-256 (see `contract_ir::SCHEMA_SHA256`
-    /// / `report::SCHEMA_SHA256`), not a value read from `quire-contract-ir`.
-    pub exchanged_schema_sha256: &'static str,
 }
 
 /// `quire-contract-ir` FR-026's native/TL temporal-correspondence contract.
@@ -36,7 +30,6 @@ pub struct CounterpartContract {
 pub const QUIRE_CONTRACT_IR_FR_026: CounterpartContract = CounterpartContract {
     label: "quire-contract-ir.FR-026",
     exchanged_contract: crate::contract_ir::CONTRACT,
-    exchanged_schema_sha256: crate::contract_ir::SCHEMA_SHA256,
 };
 
 /// Reason code shared by every class this crate's own strict request
@@ -85,8 +78,8 @@ pub struct ApplicableClass {
 }
 
 /// The three ways a registry entry may be classified. Lifecycle state is
-/// deliberately outside `ClassKey` (FR-005-AC-3): reclassifying an entry
-/// changes this field, never the entry's token.
+/// deliberately outside the entry's `token` key (FR-005-AC-3): reclassifying
+/// an entry changes this field, never the entry's token.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ClassState {
     /// Carried losslessly, with one canonical fixture and expectation.
@@ -114,7 +107,7 @@ pub struct RegistryEntry {
 }
 
 /// The closed, reviewed native-correspondence class registry, ordered by the
-/// UTF-8 bytes of each entry's `token` (`tc_087` pins this order's digest).
+/// UTF-8 bytes of each entry's `token`.
 ///
 /// Every class in FR-005's closed catalog table appears in at least one
 /// entry below; entries are one-axis-at-a-time isolations of a common
@@ -540,7 +533,27 @@ pub fn applicable_fixture_ids() -> Vec<&'static str> {
 
 #[cfg(test)]
 mod tests {
-    use super::{census, ClassState, REGISTRY};
+    use super::{census, BlockedClass, ClassState, RegistryEntry, REGISTRY};
+
+    // Trace: TC-087, FR-005-AC-3
+    #[test]
+    fn reclassifying_an_entry_preserves_its_key() {
+        let applicable = REGISTRY
+            .iter()
+            .find(|entry| matches!(entry.state, ClassState::Applicable(_)))
+            .copied()
+            .expect("registry has an applicable entry");
+        let blocked = RegistryEntry {
+            state: ClassState::Blocked(BlockedClass {
+                dependency: "upstream contract",
+                admission_condition: "upstream contract accepted",
+            }),
+            ..applicable
+        };
+        assert_ne!(blocked.state, applicable.state);
+        assert_eq!(blocked.token, applicable.token);
+        assert_eq!(blocked.dimensions, applicable.dimensions);
+    }
 
     // Trace: TC-087, FR-005-AC-1
     #[test]
@@ -591,11 +604,9 @@ mod tests {
     #[test]
     fn every_blocked_class_names_a_dependency_and_admission_condition() {
         let report = census();
-        // As of this registry revision, no native-correspondence class is
-        // blocked on an unresolved dependency (every FR-025/FR-026
-        // counterpart this census needs is already an accepted, merged
-        // contract revision -- see `QUIRE_CONTRACT_IR_FR_026`'s doc comment).
-        // That is an honest reviewed finding, not an oversight, so this test
+        // No native-correspondence class is blocked on an unresolved
+        // dependency (every FR-025/FR-026 counterpart this census needs is
+        // an accepted contract). That is an honest reviewed finding, not an oversight, so this test
         // pins the count explicitly rather than looping over zero entries:
         // it fails the moment a `Blocked` entry is added, forcing this
         // assertion itself to be updated alongside it, and the loop below
