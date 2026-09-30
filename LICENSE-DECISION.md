@@ -24,8 +24,3 @@ different license body, and is carried by:
 
 - `license = "AGPL-3.0-or-later"` in `Cargo.toml` (the SPDX identifier), and
 - this file.
-
-Tracked under `agent-ix/quire-mltl` TL-176, part of epic TL-175. Corrected
-during TL-176's review — caught by an Opus review agent that fetched
-`quire-observation`'s actual `origin/main` instead of trusting a local
-checkout sitting on a stale branch.

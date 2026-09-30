@@ -152,30 +152,15 @@ correctly-scoped replacement; see
 - [Linear epic TL-175](https://linear.app/agent-ix/issue/TL-175) — TL-*
   crates stay independent of the Quire ecosystem; `quire-mltl` is the one
   dedicated bridge.
-- TL-176 scaffolded this repository; TL-177 (this specification) precedes
-  TL-178, which performs the wholesale port of `wire::request`,
-  `wire::observation` (as `dispatch`), `wire::report`, and
-  `mapping::contract_ir` out of `tl-mltl`.
-- `tl-mltl`'s own
+- `tl-mltl`'s
   [FR-018](https://github.com/agent-ix/tl-mltl/blob/main/spec/requirements/FR-018-publish-temporal-owner-wire.md)
-  and
-  [FR-019](https://github.com/agent-ix/tl-mltl/blob/main/spec/requirements/FR-019-consume-qobs-c00.md)
-  describe this same wire boundary as it exists today in `tl-mltl`, before the
-  port. Neither is retained unedited: TL-179 rewrites FR-018 to describe a
-  generic TL-owned assertion boundary once `tl-mltl` drops its
-  `quire-observation` dependency, and TL-180 retires FR-019
-  (`status: superseded`) once that consumption path moves to this crate's
-  FR-002. This ticket (TL-177) does not itself edit either file — those edits
-  land under TL-179/TL-180 — but the References above point at FR-018/FR-019
-  as they exist today, not at artifacts that stay frozen.
+  owns the generic TL-owned assertion boundary this crate adapts; the QObs C00
+  consumption path formerly in `tl-mltl` FR-019 is this crate's FR-002.
 - `quire-contract-ir`
   [FR-025](https://github.com/agent-ix/quire-contract-ir/blob/main/spec/contract/FR-025-native-predicate-tl-projection.md)
   and
   [FR-026](https://github.com/agent-ix/quire-contract-ir/blob/main/spec/contract/FR-026-native-temporal-tl-correspondence.md)
   own the native predicate projection and the native/TL temporal
-  correspondence this crate supplies the TL side of. Their specification
-  tickets, `quire-contract-ir` #63 and #64, have both closed; implementation is
-  #70 and #71.
-- `tl-mltl` is dropping the same dimension from its M4 corpus campaign in its
-  own ADR-002 (see [agent-ix/tl-mltl#86](https://github.com/agent-ix/tl-mltl/pull/86),
-  pending merge as of 2026-09-21), the other half of this relocation.
+  correspondence this crate supplies the TL side of.
+- `tl-mltl` ADR-002 drops the same dimension from its M4 corpus campaign, the
+  other half of this relocation.

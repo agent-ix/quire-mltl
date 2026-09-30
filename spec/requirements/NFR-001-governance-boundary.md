@@ -17,14 +17,13 @@ from human approval and consuming-project validation.
 
 All `tl-mltl.temporal-assessment-request/v1`,
 `tl-mltl.temporal-assessment-result/v1`, `tl-mltl.contract-ir-result-map/v1`
-documents, QObs C00 compatibility dispositions, and release claims
-quire-mltl makes are in scope.
+documents and QObs C00 compatibility dispositions are in scope.
 
 ## Rationale
 
 quire-mltl is the one deliberate exception to `tl-mltl`'s independence from
 the Quire ecosystem (see [MRS-001](../spec.md)); it is genuinely
-Quire-governed where `tl-mltl` is not. Unidentified schema drift at this
+Quire-owned where `tl-mltl` is not. Unidentified schema drift at this
 specific bridge would silently reintroduce the
 coupling `tl-mltl`'s own independence exists to avoid, and would let a
 Quire-shaped result claim authority it does not have.
@@ -47,7 +46,7 @@ tests Cargo actually runs.
 |---|---|---|
 | NFR-001-AC-1 | Unknown schema/contract identities are rejected by every strict reader. | Test |
 | NFR-001-AC-2 | Every requirement-tagged Rust test is a test Cargo actually compiles and runs; no compiled requirement-tagged test is ignored or configured out. | Test |
-| NFR-001-AC-3 | No request, result, dispatch disposition, or Contract-IR mapping this crate emits asserts that it has been approved, that a consuming project has validated it, or that it constitutes a release decision — that authority remains with the named human release authority. | Inspection |
+| NFR-001-AC-3 | No request, result, dispatch disposition, or Contract-IR mapping this crate emits asserts that it has been approved, that a consuming project has validated it, or that it constitutes a release decision. | Inspection |
 
 ## Dependencies
 

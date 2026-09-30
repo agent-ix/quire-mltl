@@ -70,10 +70,7 @@ crate that depends on both `tl-mltl` and `quire-observation` (plus
   exception, reasoned from a local `quire-observation` checkout that was
   sitting on a stale branch; `quire-observation`'s actual `origin/main` has
   been `AGPL-3.0-or-later` since its 2026-09-13 relicense, so nothing in this
-  crate's dependency graph forces a narrower term. That mistake was caught
-  during TL-176 review and corrected in commit `b8b1f8c`
-  (`agent-ix/quire-mltl`); this ADR records the corrected, org-default
-  decision, not the withdrawn exception.
+  crate's dependency graph forces a narrower term.
 
 ## Consequences
 
@@ -87,7 +84,7 @@ crate that depends on both `tl-mltl` and `quire-observation` (plus
   `src/temporal/request.rs`, `correspondence.rs`, `join.rs`, `reader.rs`, and
   schema-catalog entries from `tl_mltl::wire::*`/`tl_mltl::mapping::contract_ir::*`
   to `quire_mltl::*`, and updates its own
-  `FR-026`, and `FR-028` to reflect the new boundary. This is the
+  `FR-026` and `FR-028` to reflect the new boundary. This is the
   consumer-side half of this decision; `quire-contract-ir` keeps its direct
   `tl-mltl` and `quire-observation` dependencies for the lower-level joins
   that remain its own domain job, gaining no new higher-level API from
@@ -95,7 +92,7 @@ crate that depends on both `tl-mltl` and `quire-observation` (plus
 - Only this repository carries the `agent-ix-baseline-producer` dev-dependency
   and the governance obligations (see
   [NFR-001](../requirements/NFR-001-governance-boundary.md)) that follow from
-  being the genuinely Quire-governed half of the boundary.
+  being the genuinely Quire-owned half of the boundary.
 
 ## Alternatives Considered
 
