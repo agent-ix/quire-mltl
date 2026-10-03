@@ -1,5 +1,7 @@
 # quire-mltl
 
+[![Discord](https://img.shields.io/badge/Discord-Join%20us-5865F2?logo=discord&logoColor=white)](https://discord.gg/k8DVhuYBR2)
+
 `quire-mltl` bridges `tl-mltl`'s TL-owned evaluation types to
 `quire-observation`'s owner-assertion views.
 
