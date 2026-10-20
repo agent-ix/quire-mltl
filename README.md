@@ -2,21 +2,15 @@
 
 [![Discord](https://img.shields.io/badge/Discord-Join%20us-5865F2?logo=discord&logoColor=white)](https://discord.gg/k8DVhuYBR2)
 
-`quire-mltl` is a Rust crate that checks a temporal rule against recorded
-evidence and returns either a Boolean value or a typed reason for having no
-value. The rule is a formula in MLTL (mission-time linear temporal logic), for
-example "the alarm is raised within five steps of a fault". The evidence is a
-trace of what happened, plus what the observation layer
-([quire-observation](https://github.com/agent-ix/quire-observation)) knows about
-that evidence: whether the scope is still open, whether the population is
-complete, and whether the needed results are available.
+`quire-mltl` is a Rust crate that checks an MLTL (mission-time linear temporal
+logic) formula against a recorded trace. It returns a Boolean, or a typed reason
+why there is no value.
 
-The formula is evaluated by [tl-mltl](https://github.com/agent-ix/tl-mltl); this
-crate admits the inputs, seals them into exact, hashable documents, and maps the
-evaluator's result to a value or a named reason (still pending, input
-incomplete, evaluator refused, and so on). It is the one crate that knows both
-the `tl-*` temporal-logic crates and the Quire layers, so each side stays
-independent of the other.
+It admits the trace and the facts [quire-observation](https://github.com/agent-ix/quire-observation)
+reports about it, evaluates the formula with
+[tl-mltl](https://github.com/agent-ix/tl-mltl), and maps the result to a value
+or a named reason such as pending or incomplete. It is the only crate that
+depends on both the `tl-*` crates and the Quire layers.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/hero-dark.svg">
