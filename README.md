@@ -2,38 +2,29 @@
 
 [![Discord](https://img.shields.io/badge/Discord-Join%20us-5865F2?logo=discord&logoColor=white)](https://discord.gg/k8DVhuYBR2)
 
-`quire-mltl` checks a temporal rule against recorded evidence and says how far
-the answer can be trusted. The rule is a formula in MLTL (mission-time linear
-temporal logic, for example "the alarm is raised within five steps of a fault").
-The evidence is a trace of what happened, plus what the observation layer
-([quire-observation](https://github.com/agent-ix/quire-observation)) knows about
-that evidence: whether the scope is still open, whether the population is
-complete, whether the needed results are available. The formula is evaluated by
-[tl-mltl](https://github.com/agent-ix/tl-mltl); this crate admits the inputs,
-seals them into exact, hashable documents, and turns the evaluator's result into
-a value or a typed reason for having no value.
+`quire-mltl` is a Rust crate that checks an MLTL (mission-time linear temporal
+logic) formula against a recorded trace. It returns a Boolean, or a typed reason
+why there is no value.
 
-It exists to keep two layers apart. The `tl-*` temporal-logic crates are meant to
-stay independent of Quire, and the Quire layers above should not have to
-understand temporal logic. `quire-mltl` is the one crate allowed to know both.
-Anyone consuming a temporal verdict gets either a Boolean that is safe to act on
-or a named reason it is not (still pending, input incomplete, evaluator refused,
-and so on), and never a "false" that really means "I couldn't tell".
+It admits the trace and the facts [quire-observation](https://github.com/agent-ix/quire-observation)
+reports about it, evaluates the formula with
+[tl-mltl](https://github.com/agent-ix/tl-mltl), and maps the result to a value
+or a named reason such as pending or incomplete. It is the only crate that
+depends on both the `tl-*` crates and the Quire layers.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/hero-dark.svg">
   <img alt="quire-mltl takes an MLTL formula, a proposition map, a trace or history, a clock and the observation facts about that evidence, and derives one canonical temporal request. The request is evaluated by tl-mltl into one result, and the result is mapped to either a Boolean value or a typed non-value reason." src="docs/images/hero-light.svg">
 </picture>
 
-One request gives one result at one evaluation point (the `anchor`), not a
-verdict per time step. The formula is judged from that position, over either a
+One request gives one result at one evaluation point (the `anchor`). The formula is judged from that position, over either a
 finite future trace or an origin-complete history, and the result records the
 truth, whether it is settled, and the exact inputs it was computed from.
 
 > **Status: public prerelease.** The crate is at 0.1.0, is not published to any
 > registry (`publish = false`), and its wire formats may still change.
 
-## A first run
+## Usage
 
 This is the core of the first test in
 [`tests/tc_084_temporal_owner_wire.rs`](tests/tc_084_temporal_owner_wire.rs).
@@ -74,7 +65,7 @@ every `read` re-derives the document from its inputs and refuses on any
 mismatch. A result cannot be read against a different request, and a mapping
 cannot be made from a result it was not selected for.
 
-## What a result becomes
+## Outcomes
 
 `contract_ir::map` checks the result in a fixed order, and the first row that
 applies decides the outcome. Only a completed, complete, available and settled
@@ -85,7 +76,7 @@ result becomes a Boolean.
   <img alt="A result is checked in order. Execution that did not complete, then completeness that is not complete, then an unavailable result, then unsettled truth each map to a NonValue with its own reason. Only a settled satisfied or violated result maps to a Boolean Value." src="docs/images/outcomes-light.svg">
 </picture>
 
-## Modules and contracts
+## Modules
 
 Each module owns one wire contract. The contract labels are constants in the
 code, and the JSON Schemas are checked in under [`schemas/`](schemas/).
@@ -107,7 +98,7 @@ code, and the JSON Schemas are checked in under [`schemas/`](schemas/).
 | `settlement` | `closed-scope`, `decisive-witness`, `decisive-counterexample`, `unsettled`, `unavailable` |
 | `relation` | `original`, `superseding`, `invalidating` |
 
-Truth is kept separate from execution and from the observation facts, so a
+Truth, execution and the observation facts are recorded separately, so a
 result can say "satisfied" while the completeness assertion still keeps it from
 becoming a value.
 
