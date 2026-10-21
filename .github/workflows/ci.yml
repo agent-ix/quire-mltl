@@ -33,9 +33,6 @@ jobs:
       - name: Test
         run: cargo test --all-targets --all-features
 
-      - name: Unsafe audit
-        run: bash scripts/check_unsafe_comments.sh
-
       - name: Docs
         run: RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --all-features
 

@@ -14,9 +14,8 @@ help:
 	@echo "  make build            - Release build"
 	@echo "  make clean            - cargo clean"
 	@echo "  make deny             - cargo deny check licenses and sources"
-	@echo "  make audit-unsafe     - Enforce // SAFETY: comments on unsafe blocks"
 	@echo "  make docs             - cargo doc, denying missing/broken doc links"
-	@echo "  make ci               - All CI gates locally (fmt-check + lint + test + deny + audit-unsafe + docs)"
+	@echo "  make ci               - All CI gates locally (fmt-check + lint + test + deny + docs)"
 	@echo ""
 	@echo "GitHub Actions is workflow_dispatch-only. Use 'make ci' while iterating"
 	@echo "and dispatch hosted CI only for a finalized revision."
@@ -58,10 +57,6 @@ deny:
 	$(CARGO) deny check licenses
 	$(CARGO) deny check sources
 
-.PHONY: audit-unsafe
-audit-unsafe:
-	bash scripts/check_unsafe_comments.sh
-
 # =============================================================================
 # Documentation
 # =============================================================================
@@ -77,4 +72,4 @@ docs:
 # =============================================================================
 
 .PHONY: ci
-ci: fmt-check lint test deny audit-unsafe docs
+ci: fmt-check lint test deny docs

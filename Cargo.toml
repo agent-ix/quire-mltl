@@ -9,6 +9,14 @@ license = "AGPL-3.0-or-later"
 repository = "https://github.com/agent-ix/quire-mltl"
 publish = false
 
+[workspace]
+
+[workspace.lints.clippy]
+undocumented_unsafe_blocks = "deny"
+
+[lints]
+workspace = true
+
 [lib]
 name = "quire_mltl"
 path = "src/lib.rs"
