@@ -39,7 +39,6 @@ make fmt-check        # verify formatting (CI gate)
 make lint             # clippy with -D warnings
 make test             # cargo test
 make deny             # cargo deny check licenses and sources
-make audit-unsafe     # check that every unsafe block has a // SAFETY: comment
 make docs             # cargo doc, denying missing/broken doc links
 make ci               # complete local gate
 ```
@@ -63,9 +62,8 @@ Mirrors `tl-mltl`'s own scaffolding:
 - `deny.toml` allow-lists licenses (including the AGPL-3.0-only /
   AGPL-3.0-or-later terms this dependency graph actually carries) and denies
   unknown registries/git sources
-- `scripts/check_unsafe_comments.sh` runs locally via `make audit-unsafe`.
-  Every `unsafe {` block must have a `// SAFETY:` comment within the 3
-  preceding lines, or be listed in `scripts/unsafe_comment_baseline.txt`.
+- The root crate opts into the workspace's denied Clippy
+  `undocumented_unsafe_blocks` lint; `make lint` and CI enforce it.
 - `rustfmt.toml` uses 100-char width
 
 ## License

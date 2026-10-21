@@ -22,8 +22,8 @@
 ## Unsafe
 
 - Every `unsafe {` block must have a `// SAFETY: <reason>` comment within the 3 lines above it.
-- `make audit-unsafe` enforces this. CI runs the same check.
-- Pre-existing baselines (legacy unsafe without comments) live in `scripts/unsafe_comment_baseline.txt`. Regenerate with `bash scripts/check_unsafe_comments.sh --update-baseline`.
+- The workspace's denied Clippy `undocumented_unsafe_blocks` lint enforces this through
+  `make lint` and CI.
 
 ## Dependencies
 
