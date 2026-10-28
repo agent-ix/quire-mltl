@@ -69,7 +69,6 @@ Mirrors `tl-mltl`'s own scaffolding:
 ## License
 
 `AGPL-3.0-or-later`, this org's default for `quire-*` program repositories.
-See `LICENSE-DECISION.md`.
 
 ## Layout
 

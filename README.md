@@ -152,4 +152,4 @@ Contributions need the [CLA](CLA.md). See [CONTRIBUTING.md](CONTRIBUTING.md) and
 Licensed under [AGPL-3.0-or-later](LICENSE), the default for `quire-*` program
 repositories. `quire-mltl` directly incorporates `quire-observation`, which is
 also `AGPL-3.0-or-later`, so nothing in the dependency graph requires a narrower
-term. See [LICENSE-DECISION.md](LICENSE-DECISION.md).
+term.
