@@ -97,6 +97,32 @@ pub enum ResultRelationInput<'a> {
     Invalidating(&'a ValidatedTemporalResult),
 }
 
+/// Why a supplied direct predecessor does not match an admitted result.
+///
+/// This is a closed set: validation compares already retained bytes only and
+/// does not parse, evaluate, or otherwise admit a new owner document.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SuppliedPredecessorError {
+    /// A correction's retained predecessor was not supplied.
+    Missing,
+    /// An original result was supplied a predecessor despite having none.
+    Unexpected,
+    /// Supplied bytes differ from the complete retained predecessor bytes.
+    Mismatch,
+}
+
+impl std::fmt::Display for SuppliedPredecessorError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(match self {
+            Self::Missing => "the direct predecessor is missing",
+            Self::Unexpected => "an original result has no direct predecessor",
+            Self::Mismatch => "the supplied direct predecessor bytes do not match",
+        })
+    }
+}
+
+impl std::error::Error for SuppliedPredecessorError {}
+
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct RelationWire {
@@ -195,6 +221,7 @@ pub struct ValidatedTemporalResult {
     bytes: Vec<u8>,
     usage: OwnerUsage,
     request: ValidatedTemporalRequest,
+    direct_predecessor_bytes: Option<Vec<u8>>,
 }
 
 impl ValidatedTemporalResult {
@@ -308,6 +335,42 @@ impl ValidatedTemporalResult {
         self.wire.relation.direct_predecessor_identity.as_deref()
     }
 
+    /// Complete canonical owner bytes of the direct predecessor admitted with
+    /// this result, or `None` for an original result.
+    ///
+    /// These bytes are owned by this result and remain available after the
+    /// supplied predecessor is dropped. Earlier lineage is not recursively
+    /// retained. Admission bounds this copy by its current input-byte ceiling.
+    #[must_use]
+    pub fn direct_predecessor_bytes(&self) -> Option<&[u8]> {
+        self.direct_predecessor_bytes.as_deref()
+    }
+
+    /// Checks a supplied predecessor against the complete owner bytes retained
+    /// at admission. An original result accepts exactly `None`.
+    ///
+    /// This operation does not parse, hash, allocate, or evaluate. Identity
+    /// labels alone cannot establish equality: every byte must agree, and
+    /// unchanged labels on changed content are refused. The result, retained
+    /// predecessor, and recorded usage are unchanged on success or refusal.
+    ///
+    /// # Errors
+    ///
+    /// Returns a distinct typed error for a missing correction predecessor, an
+    /// unexpected original predecessor, or unequal complete bytes.
+    pub fn validate_supplied_predecessor(
+        &self,
+        supplied: Option<&[u8]>,
+    ) -> Result<(), SuppliedPredecessorError> {
+        match (self.direct_predecessor_bytes(), supplied) {
+            (None, None) => Ok(()),
+            (None, Some(_)) => Err(SuppliedPredecessorError::Unexpected),
+            (Some(_), None) => Err(SuppliedPredecessorError::Missing),
+            (Some(expected), Some(supplied)) if expected == supplied => Ok(()),
+            (Some(_), Some(_)) => Err(SuppliedPredecessorError::Mismatch),
+        }
+    }
+
     /// Exact canonical bytes.
     #[must_use]
     pub fn bytes(&self) -> &[u8] {
@@ -350,6 +413,16 @@ pub fn read(
     relation: ResultRelationInput<'_>,
     limits: OwnerLimits,
 ) -> Result<ValidatedTemporalResult, OwnerReadError> {
+    let predecessor = match relation {
+        ResultRelationInput::Original => None,
+        ResultRelationInput::Superseding(predecessor)
+        | ResultRelationInput::Invalidating(predecessor) => Some(predecessor),
+    };
+    if let Some(predecessor) = predecessor {
+        if predecessor.bytes().len() > limits.effective().max_input_bytes {
+            return Err(resource("directPredecessor", predecessor.usage()));
+        }
+    }
     let (expected, expected_usage) = build_wire(request, relation, limits.effective())?;
     let (wire, usage) = read_expected(bytes, &expected, limits, |wire, effective| {
         validate_wire(wire, effective, expected_usage)
@@ -359,6 +432,7 @@ pub fn read(
         bytes: bytes.to_vec(),
         usage,
         request: request.clone(),
+        direct_predecessor_bytes: predecessor.map(|predecessor| predecessor.bytes().to_vec()),
     })
 }
 
