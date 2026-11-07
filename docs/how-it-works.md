@@ -47,3 +47,42 @@ A formula passes through several crates on its way from text to a Quire outcome.
 </picture>
 
 The calling program moves documents from one stage to the next. The dependency structure between the crates is in the [README](../README.md#the-tl-stack).
+
+## In a debugging session
+
+quire-mltl is step 6 of a debugging session that asks why a deadline requirement failed. The requirement is `F[0,3] p2`, the recorded trace has four instants, `[[], [0, 1], [1], [1]]`, and `p2` (signal `s2`) is absent at every one of them. tl-mltl returns `false` at time 0 and R2U2 agrees. This crate takes that result and decides whether `false` can be reported as a value.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/scenario-sequence-dark.svg">
+  <img alt="A deadline requirement fails on a recorded trace, and the engineer asks why. The engineer sends F[0,3] p2 to tl-parse and gets a formula document, binds p2 to signal s2 with tl-syntax, and sends the document to tl-rewrite, which reports Unchanged. tl-mltl evaluates the formula and trace and returns false at time 0 with a buffer of 4 instants, and R2U2, which runs outside the crates, returns false at time 0 for the C2PO expression F[0,3](p2). tl-oracle evaluates the same formula and trace independently and returns false. quire-mltl maps the result to Value false. Numbered rings mark where to look at each step." src="images/scenario-sequence-light.svg">
+</picture>
+
+At this step, look at three things:
+
+- The `truth` of the result. For this case it is `violated`, the execution is `completed`, and the result is final because the closed trace covers the whole window `[0,3]`.
+- The completeness and availability views in the request. They are independent of the truth. A `violated` result with an `incomplete` completeness view maps to a non-value, and `false` is not produced.
+- The `outcome` of the mapping. Only a final result with complete, available facts becomes `Value { value: false }`.
+
+The crate's test `tc_084_future_and_past_requests_evaluate_and_strict_read` builds a request from the test fixtures in `tests/support`, evaluates it, reads the result back, and maps it. That test uses a one-proposition formula that is true, not this scenario's formula, so it ends in `Value { value: true }`. Running it:
+
+```text
+$ cargo test --test tc_084_temporal_owner_wire tc_084_future_and_past_requests_evaluate_and_strict_read
+running 1 test
+test tc_084_future_and_past_requests_evaluate_and_strict_read ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.05s
+```
+
+The corpus case has no observation views, so the scenario cannot be replayed from the corpus alone. The same fixtures can be reused for it. A scratch test (not committed) that uses `tests/support` with four positions, a proposition map that binds proposition 2 to `s2`, the formula `F[0,3] p2` and the four-instant trace gave this output, for the `online-prefix` and the `closed-trace` profile alike:
+
+```text
+profile OnlinePrefixV1: truth Violated final true execution Completed
+outcome Value { value: false }
+incomplete: truth Violated outcome NonValue { reason: Incomplete }
+```
+
+The first two lines come from the complete, available views in the fixtures. The third line comes from the same request with the `incomplete` completeness view: the truth is still `violated`, and the mapped outcome is the non-value `Incomplete`. These views are test fixtures, not facts produced by quire-observation for the R2U2 case.
+
+The test `tc_084_owner_axes_remain_independent_and_non_values_are_total` runs 192 combinations of progress, closure, completeness and availability views and checks the mapped outcome of each against the order of checks above. It passes on this checkout.
+
+The full walkthrough, with the steps before and after this one, is in [tl-mltl's scenario page](https://github.com/agent-ix/tl-mltl/blob/main/docs/scenario.md).
