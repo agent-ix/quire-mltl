@@ -3,7 +3,7 @@
 mod support;
 
 use quire_mltl::report::{
-    self, ResultRelationInput, ResultRelationKind, SuppliedPredecessorError,
+    self, ResultRelationInput, ResultRelationKind, SuppliedPredecessorErrorCode,
     ValidatedTemporalResult,
 };
 use quire_mltl::request::ValidatedTemporalRequest;
@@ -121,8 +121,10 @@ fn exact_validation_refuses_same_identity_with_changed_content_and_partial_offer
         Ok(())
     );
     assert_eq!(
-        correction.validate_supplied_predecessor(None),
-        Err(SuppliedPredecessorError::Missing)
+        correction
+            .validate_supplied_predecessor(None)
+            .map_err(|error| error.code()),
+        Err(SuppliedPredecessorErrorCode::Missing)
     );
     let mut changed: serde_json::Value = serde_json::from_slice(original.bytes()).unwrap();
     let original_identity = changed["identity"].clone();
@@ -147,8 +149,10 @@ fn exact_validation_refuses_same_identity_with_changed_content_and_partial_offer
         b"".as_slice(),
     ] {
         assert_eq!(
-            correction.validate_supplied_predecessor(Some(offered)),
-            Err(SuppliedPredecessorError::Mismatch)
+            correction
+                .validate_supplied_predecessor(Some(offered))
+                .map_err(|error| error.code()),
+            Err(SuppliedPredecessorErrorCode::Mismatch)
         );
     }
     assert_eq!(correction, unchanged);
@@ -170,8 +174,10 @@ fn original_accepts_only_absence_without_changing_its_result() {
     assert_eq!(original.validate_supplied_predecessor(None), Ok(()));
     for supplied in [original.bytes(), b"".as_slice(), b"not JSON".as_slice()] {
         assert_eq!(
-            original.validate_supplied_predecessor(Some(supplied)),
-            Err(SuppliedPredecessorError::Unexpected)
+            original
+                .validate_supplied_predecessor(Some(supplied))
+                .map_err(|error| error.code()),
+            Err(SuppliedPredecessorErrorCode::Unexpected)
         );
     }
     assert_eq!(original, unchanged);
@@ -211,4 +217,40 @@ fn predecessor_retention_obeys_the_current_callers_input_byte_ceiling() {
         result.validate_supplied_predecessor(Some(predecessor.bytes())),
         Ok(())
     );
+}
+
+/// Trace: TC-084, FR-001-AC-12
+#[test]
+fn predecessor_error_catalog_has_distinct_stable_round_tripping_codes() {
+    let catalog = SuppliedPredecessorErrorCode::all();
+    assert_eq!(
+        catalog.iter().map(|code| code.as_str()).collect::<Vec<_>>(),
+        [
+            "missing-predecessor",
+            "unexpected-predecessor",
+            "predecessor-mismatch"
+        ]
+    );
+    for &code in catalog {
+        assert_eq!(
+            SuppliedPredecessorErrorCode::from_code(code.as_str()),
+            Some(code)
+        );
+    }
+    assert_eq!(SuppliedPredecessorErrorCode::from_code("Missing"), None);
+    assert_eq!(SuppliedPredecessorErrorCode::from_code(""), None);
+    let request = admitted_request();
+    let original = admitted_result(&request, ResultRelationInput::Original);
+    let error = original
+        .validate_supplied_predecessor(Some(b"offer"))
+        .unwrap_err();
+    assert_eq!(error.code(), SuppliedPredecessorErrorCode::Unexpected);
+    assert_eq!(
+        error.message(),
+        "an original result has no direct predecessor"
+    );
+    assert!(error.context().is_empty());
+    assert_eq!(error.to_string(), error.message());
+    let error: &dyn std::error::Error = &error;
+    assert!(error.source().is_none());
 }

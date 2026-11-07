@@ -154,7 +154,7 @@ evaluation semantic they already carry.
   `directPredecessor`. Only the direct predecessor bytes are retained, not
   an in-memory recursive lineage. An original result SHALL expose no predecessor. Exact supplied-predecessor
   validation SHALL compare the complete supplied bytes to those retained bytes,
-  without parsing, hashing, evaluating, allocating, or traversing earlier lineage.
+  without parsing, hashing, evaluating, or traversing earlier lineage.
   Missing, unexpected, and unequal supplied predecessors SHALL be distinguishable
   typed errors. Equal identity labels alone SHALL never establish a match, including
   when another field differs under an unchanged identity. This operation SHALL
