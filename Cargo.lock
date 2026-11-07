@@ -86,12 +86,24 @@ dependencies = [
 [[package]]
 name = "quire-canonical"
 version = "0.3.0"
-source = "git+https://github.com/agent-ix/quire-canonical?tag=quire-canonical-v0.3.0#1d73f93f6b8139f10eb5bd5082a0b877958344fa"
+source = "git+https://github.com/agent-ix/quire-canonical?branch=main#35987f1dea33edf13bdf8e6a39153a802503f5a0"
 dependencies = [
+ "quire-canonical-derive",
  "ryu-js",
  "serde",
+ "serde_json",
  "sha2",
  "thiserror",
+]
+
+[[package]]
+name = "quire-canonical-derive"
+version = "0.3.0"
+source = "git+https://github.com/agent-ix/quire-canonical?branch=main#35987f1dea33edf13bdf8e6a39153a802503f5a0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 3.0.6",
 ]
 
 [[package]]
@@ -103,13 +115,13 @@ dependencies = [
  "serde_json",
  "sha2",
  "tl-mltl",
- "tl-syntax",
+ "tl-syntax 0.3.0 (git+https://github.com/agent-ix/tl-syntax.git?branch=main)",
 ]
 
 [[package]]
 name = "quire-observation"
 version = "0.1.0"
-source = "git+https://github.com/agent-ix/quire-observation?rev=ab4abe3a03d24ed8430f513b8b695ac2d1471938#ab4abe3a03d24ed8430f513b8b695ac2d1471938"
+source = "git+https://github.com/agent-ix/quire-observation?branch=main#4d5198c4f897ed7477e7a03907b7a11ebaca4557"
 dependencies = [
  "quire-canonical",
  "serde",
@@ -232,18 +244,28 @@ dependencies = [
 [[package]]
 name = "tl-mltl"
 version = "0.3.0"
-source = "git+https://github.com/agent-ix/tl-mltl?rev=452f013a3168512603d427bce3360bc14c1175a6#452f013a3168512603d427bce3360bc14c1175a6"
+source = "git+https://github.com/agent-ix/tl-mltl?branch=main#db95d5345ca6afed5557ad5a0be4ed3a58c88ac3"
 dependencies = [
  "serde",
  "serde_json",
  "sha2",
- "tl-syntax",
+ "tl-syntax 0.3.0 (git+https://github.com/agent-ix/tl-syntax.git?rev=6aa9b11e29040d64b437da87c9944e3dedd34a86)",
 ]
 
 [[package]]
 name = "tl-syntax"
 version = "0.3.0"
-source = "git+https://github.com/agent-ix/tl-syntax.git?rev=4a5614193d21e5ae99950ae683b04ba0ec931358#4a5614193d21e5ae99950ae683b04ba0ec931358"
+source = "git+https://github.com/agent-ix/tl-syntax.git?branch=main#d97d3d732a8f161337bb57d3559d82bae9d38a5d"
+dependencies = [
+ "serde",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
+name = "tl-syntax"
+version = "0.3.0"
+source = "git+https://github.com/agent-ix/tl-syntax.git?rev=6aa9b11e29040d64b437da87c9944e3dedd34a86#6aa9b11e29040d64b437da87c9944e3dedd34a86"
 dependencies = [
  "serde",
  "serde_json",
