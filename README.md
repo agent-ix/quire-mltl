@@ -25,9 +25,26 @@ them or implement temporal semantics, and it does not produce the observation fa
   <img alt="quire-mltl takes an MLTL formula, a proposition map, a trace or history, a clock and the observation facts about that evidence, and derives one canonical temporal request. The request is evaluated by tl-mltl into one result, and the result is mapped to either a Boolean value or a typed non-value reason." src="docs/images/hero-light.svg">
 </picture>
 
-> **Status: prerelease.** The crate is at version 0.1.0 and has `publish = false`.
-> It depends on tl-mltl, tl-syntax and quire-observation through git, and its wire
-> formats may change.
+## Getting started
+
+quire-mltl is not on crates.io. Depend on it through git:
+
+```toml
+[dependencies]
+quire-mltl = { git = "https://github.com/agent-ix/quire-mltl" }
+```
+
+Add `rev = "<commit>"` to pin a commit. It needs the Rust version in `rust-version` in `Cargo.toml`, or newer.
+
+The build also fetches quire-observation from GitHub, so it needs read access to that repository.
+
+To build from a clone:
+
+```sh
+git clone https://github.com/agent-ix/quire-mltl.git
+cd quire-mltl
+cargo build --release
+```
 
 ## Usage
 
