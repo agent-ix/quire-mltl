@@ -4,7 +4,7 @@
 //! unchanged; evaluation itself is delegated entirely to `tl-mltl`'s
 //! existing future/past evaluators. See FR-001.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 use quire_observation::authority::completeness;
 use serde::{Deserialize, Serialize};
@@ -95,6 +95,95 @@ pub enum ResultRelationInput<'a> {
     Superseding(&'a ValidatedTemporalResult),
     /// Invalidate this exact validated result.
     Invalidating(&'a ValidatedTemporalResult),
+}
+
+/// Stable conditions for exact supplied-predecessor validation.
+///
+/// This is a closed catalog: validation compares already retained bytes only
+/// and does not parse, evaluate, or admit a new owner document.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SuppliedPredecessorErrorCode {
+    /// A correction's retained predecessor was not supplied.
+    Missing,
+    /// An original result was supplied a predecessor despite having none.
+    Unexpected,
+    /// Supplied bytes differ from the complete retained predecessor bytes.
+    Mismatch,
+}
+
+impl SuppliedPredecessorErrorCode {
+    /// Stable machine-readable code; spellings are never renamed or reused.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Missing => "missing-predecessor",
+            Self::Unexpected => "unexpected-predecessor",
+            Self::Mismatch => "predecessor-mismatch",
+        }
+    }
+
+    /// Every supported condition in stable catalog order.
+    #[must_use]
+    pub const fn all() -> &'static [Self] {
+        &[Self::Missing, Self::Unexpected, Self::Mismatch]
+    }
+
+    /// Resolves an exact stable code, refusing unrecognized spellings.
+    #[must_use]
+    pub fn from_code(code: &str) -> Option<Self> {
+        Self::all()
+            .iter()
+            .copied()
+            .find(|item| item.as_str() == code)
+    }
+}
+
+/// Typed refusal from exact supplied-predecessor validation.
+///
+/// Callers branch on [`Self::code`], never on the human-readable message.
+#[derive(Clone, Debug, Eq, PartialEq, thiserror::Error)]
+#[error("{message}")]
+pub struct SuppliedPredecessorError {
+    code: SuppliedPredecessorErrorCode,
+    message: Box<str>,
+    context: BTreeMap<String, String>,
+}
+
+impl SuppliedPredecessorError {
+    fn new(code: SuppliedPredecessorErrorCode) -> Self {
+        let message = match code {
+            SuppliedPredecessorErrorCode::Missing => "the direct predecessor is missing",
+            SuppliedPredecessorErrorCode::Unexpected => {
+                "an original result has no direct predecessor"
+            }
+            SuppliedPredecessorErrorCode::Mismatch => {
+                "the supplied direct predecessor bytes do not match"
+            }
+        };
+        Self {
+            code,
+            message: message.into(),
+            context: BTreeMap::new(),
+        }
+    }
+
+    /// Stable typed condition.
+    #[must_use]
+    pub const fn code(&self) -> SuppliedPredecessorErrorCode {
+        self.code
+    }
+
+    /// Immutable explanation for human readers.
+    #[must_use]
+    pub fn message(&self) -> &str {
+        &self.message
+    }
+
+    /// Deterministically ordered context, empty when the typed code suffices.
+    #[must_use]
+    pub const fn context(&self) -> &BTreeMap<String, String> {
+        &self.context
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -195,6 +284,7 @@ pub struct ValidatedTemporalResult {
     bytes: Vec<u8>,
     usage: OwnerUsage,
     request: ValidatedTemporalRequest,
+    direct_predecessor_bytes: Option<Vec<u8>>,
 }
 
 impl ValidatedTemporalResult {
@@ -308,6 +398,48 @@ impl ValidatedTemporalResult {
         self.wire.relation.direct_predecessor_identity.as_deref()
     }
 
+    /// Complete canonical owner bytes of the direct predecessor admitted with
+    /// this result, or `None` for an original result.
+    ///
+    /// These bytes are owned by this result and remain available after the
+    /// supplied predecessor is dropped. Earlier lineage is not recursively
+    /// retained. Admission bounds this copy by its current input-byte ceiling.
+    #[must_use]
+    pub fn direct_predecessor_bytes(&self) -> Option<&[u8]> {
+        self.direct_predecessor_bytes.as_deref()
+    }
+
+    /// Checks a supplied predecessor against the complete owner bytes retained
+    /// at admission. An original result accepts exactly `None`.
+    ///
+    /// This operation does not parse, hash, or evaluate. Identity
+    /// labels alone cannot establish equality: every byte must agree, and
+    /// unchanged labels on changed content are refused. The result, retained
+    /// predecessor, and recorded usage are unchanged on success or refusal.
+    ///
+    /// # Errors
+    ///
+    /// Returns a distinct typed error for a missing correction predecessor, an
+    /// unexpected original predecessor, or unequal complete bytes.
+    pub fn validate_supplied_predecessor(
+        &self,
+        supplied: Option<&[u8]>,
+    ) -> Result<(), SuppliedPredecessorError> {
+        match (self.direct_predecessor_bytes(), supplied) {
+            (None, None) => Ok(()),
+            (None, Some(_)) => Err(SuppliedPredecessorError::new(
+                SuppliedPredecessorErrorCode::Unexpected,
+            )),
+            (Some(_), None) => Err(SuppliedPredecessorError::new(
+                SuppliedPredecessorErrorCode::Missing,
+            )),
+            (Some(expected), Some(supplied)) if expected == supplied => Ok(()),
+            (Some(_), Some(_)) => Err(SuppliedPredecessorError::new(
+                SuppliedPredecessorErrorCode::Mismatch,
+            )),
+        }
+    }
+
     /// Exact canonical bytes.
     #[must_use]
     pub fn bytes(&self) -> &[u8] {
@@ -350,6 +482,16 @@ pub fn read(
     relation: ResultRelationInput<'_>,
     limits: OwnerLimits,
 ) -> Result<ValidatedTemporalResult, OwnerReadError> {
+    let predecessor = match relation {
+        ResultRelationInput::Original => None,
+        ResultRelationInput::Superseding(predecessor)
+        | ResultRelationInput::Invalidating(predecessor) => Some(predecessor),
+    };
+    if let Some(predecessor) = predecessor {
+        if predecessor.bytes().len() > limits.effective().max_input_bytes {
+            return Err(resource("directPredecessor", predecessor.usage()));
+        }
+    }
     let (expected, expected_usage) = build_wire(request, relation, limits.effective())?;
     let (wire, usage) = read_expected(bytes, &expected, limits, |wire, effective| {
         validate_wire(wire, effective, expected_usage)
@@ -359,6 +501,7 @@ pub fn read(
         bytes: bytes.to_vec(),
         usage,
         request: request.clone(),
+        direct_predecessor_bytes: predecessor.map(|predecessor| predecessor.bytes().to_vec()),
     })
 }
 

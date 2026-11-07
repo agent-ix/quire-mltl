@@ -145,6 +145,20 @@ evaluation semantic they already carry.
   identity and byte digest, and the predecessor's own bytes are never
   mutated. An `Original` result always carries revision one and no
   predecessor reference.
+- A validated result SHALL retain the complete canonical owner bytes of its direct
+  predecessor supplied at admission and expose them publicly as a borrowed byte
+  slice. Admission SHALL enforce the current caller-lowered `max_input_bytes`
+  ceiling on each complete retained predecessor before copying it, even if it
+  was admitted earlier under a larger ceiling. Equality at that ceiling SHALL
+  remain admissible; one byte over SHALL refuse with `ResourceIncomplete` at
+  `directPredecessor`. Only the direct predecessor bytes are retained, not
+  an in-memory recursive lineage. An original result SHALL expose no predecessor. Exact supplied-predecessor
+  validation SHALL compare the complete supplied bytes to those retained bytes,
+  without parsing, hashing, evaluating, or traversing earlier lineage.
+  Missing, unexpected, and unequal supplied predecessors SHALL be distinguishable
+  typed errors. Equal identity labels alone SHALL never establish a match, including
+  when another field differs under an unchanged identity. This operation SHALL
+  preserve the result, its usage, and the retained predecessor unchanged.
 - Every reader independently re-derives the applicable identity from the
   decoded document's own canonical bytes and rejects a document whose
   recomputed identity disagrees, whose contract label is wrong, whose limits
@@ -172,6 +186,8 @@ evaluation semantic they already carry.
 | FR-001-AC-8 | A formula referencing a `Proposition` node id absent from the supplied proposition map is refused with `ExpectedMismatch("propositionMap")` before evaluation begins; the same formula against a proposition map that includes every referenced id is admitted. | Test |
 | FR-001-AC-9 | For the past lane, a clock/history-binding pairing other than `EventPosition`/`EventPosition` or an exactly-agreeing `FixedSample`/`FixedSample` pair (nanosecond unit, denominator 1 on both epoch and period, numerators equal to the clock's `epochNanos`/`periodNanos`) is refused with `ExpectedMismatch("clockBinding")`. | Test |
 | FR-001-AC-10 | A consumer can construct `RequestInput` and `ObservationInputs` directly from the public `tl-mltl`, `tl-syntax`, and `quire-observation` branch-main cohort types; each field has one compile-time type identity with its owner crate, with no conversion or duplicate rev-pinned identity. | Compile test |
+| FR-001-AC-11 | A validated superseding or invalidating result publicly exposes all canonical bytes of its admitted direct predecessor; an original exposes none. The retained direct predecessor remains complete and unchanged after its source value is dropped, without recursively retaining earlier lineage. Retention is admitted at the current input-byte ceiling and refuses one byte over before copying, even when the predecessor was admitted under a larger earlier ceiling. | Test |
+| FR-001-AC-12 | Non-evaluating supplied-predecessor validation accepts exactly the retained complete canonical bytes (or absence for an original), distinguishes missing, unexpected, and unequal bytes with typed errors, and rejects same-identity/different-value, truncated, extended, or identity-only offers without changing result bytes, usage, or predecessor bytes. | Test |
 
 ## Dependencies
 
