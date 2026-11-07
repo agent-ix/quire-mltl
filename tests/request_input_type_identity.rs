@@ -88,10 +88,16 @@ tl-syntax = {{ version = "=0.3.0", git = "https://github.com/agent-ix/tl-syntax.
 #[test]
 fn outside_consumer_passes_main_cohort_types_into_request_input() {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let consumer = root.join("target").join("outside-consumer");
+    let target_dir = std::env::var_os("CARGO_TARGET_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| root.join("target"));
+    let consumer = target_dir.join("outside-consumer");
     fs::create_dir_all(consumer.join("src")).expect("create consumer src dir");
     fs::write(consumer.join("Cargo.toml"), consumer_manifest(&root)).expect("write manifest");
     fs::write(consumer.join("src/lib.rs"), CONSUMER_MAIN).expect("write consumer source");
+    // Resolve the consumer's git dependencies to the commits quire-mltl locked,
+    // replacing any lock left by an earlier run.
+    fs::copy(root.join("Cargo.lock"), consumer.join("Cargo.lock")).expect("copy Cargo.lock");
 
     let output = Command::new(env!("CARGO"))
         .args(["check", "--offline", "--manifest-path"])

@@ -37,3 +37,4 @@ Ticket: IR-1377. Reviewed frozen PR #17 head b94b18e against origin/main. Examin
 | FND | outcome | reason |
 | --- | --- | --- |
 | FND-001 | fixed | 62ae516 refreshes Cargo.lock to tl-mltl branch=main e032a3e, whose tl-syntax edge is branch=main; the rev=6aa9b11 tl-syntax package is gone and one tl-syntax (branch=main d97d3d7) remains. `cargo test --locked --test request_input_type_identity`, tc_084/tc_086 and `cargo clippy --locked --all-targets -D warnings` pass at 62ae516. The new InfiniteTraceV1 arm in src/report.rs:510-513 is a correct exhaustive-match refusal; tl-syntax d97d3d7 already rejects that profile at FormulaDocument validation (InfiniteProfileRequiresUnboundedEdition), so the arm is defensive only. |
+| FND-002 | fixed | 6f26192 replaces the doc line with `#[trace("FR-001-AC-10")]` from ix-trace-rs (branch=main dev-dependency, locked at e29cc07); compiles and clippy -D warnings is clean. |
