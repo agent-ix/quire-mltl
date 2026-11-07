@@ -1,36 +1,42 @@
 # quire-mltl
 
 [![Discord](https://img.shields.io/badge/Discord-Join%20us-5865F2?logo=discord&logoColor=white)](https://discord.gg/k8DVhuYBR2)
+[![License](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue)](#license)
+[![Rust](https://img.shields.io/badge/rust-1.98%2B-orange?logo=rust)](Cargo.toml)
 
-`quire-mltl` is a Rust crate that checks an MLTL (mission-time linear temporal
-logic) formula against a recorded trace. It returns a Boolean, or a typed reason
-why there is no value.
+quire-mltl is a Rust crate that evaluates a Mission-time Linear Temporal Logic
+(MLTL) formula against a recorded trace or history and reports the result as a
+Boolean value or a typed reason why there is no value. It is the one crate in the
+TL family that depends on Quire: [tl-syntax](https://github.com/agent-ix/tl-syntax)
+defines the formula types, [tl-parse](https://github.com/agent-ix/tl-parse) reads
+text, [tl-rewrite](https://github.com/agent-ix/tl-rewrite) rewrites formulas,
+[tl-mltl](https://github.com/agent-ix/tl-mltl) evaluates them and
+[tl-oracle](https://github.com/agent-ix/tl-oracle) cross-checks the evaluator in tests.
 
-It admits the trace and the facts [quire-observation](https://github.com/agent-ix/quire-observation)
-reports about it, evaluates the formula with
-[tl-mltl](https://github.com/agent-ix/tl-mltl), and maps the result to a value
-or a named reason such as pending or incomplete. It is the only crate that
-depends on both the `tl-*` crates and the Quire layers.
+The crate admits a formula, a proposition map, a trace or history, a clock and
+the progress, closure, completeness and availability facts that
+[quire-observation](https://github.com/agent-ix/quire-observation) reports, and
+writes them as one canonical request. It evaluates the request with tl-mltl and maps
+the result to a value or a named non-value. It does not parse formulas, rewrite
+them or implement temporal semantics, and it does not produce the observation facts.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/hero-dark.svg">
   <img alt="quire-mltl takes an MLTL formula, a proposition map, a trace or history, a clock and the observation facts about that evidence, and derives one canonical temporal request. The request is evaluated by tl-mltl into one result, and the result is mapped to either a Boolean value or a typed non-value reason." src="docs/images/hero-light.svg">
 </picture>
 
-One request gives one result at one evaluation point (the `anchor`). The formula is judged from that position, over either a
-finite future trace or an origin-complete history, and the result records the
-truth, whether it is settled, and the exact inputs it was computed from.
-
-> **Status: public prerelease.** The crate is at 0.1.0, is not published to any
-> registry (`publish = false`), and its wire formats may still change.
+> **Status: prerelease.** The crate is at version 0.1.0 and has `publish = false`.
+> It depends on tl-mltl, tl-syntax and quire-observation through git, and its wire
+> formats may change.
 
 ## Usage
 
-This is the core of the first test in
-[`tests/tc_084_temporal_owner_wire.rs`](tests/tc_084_temporal_owner_wire.rs).
-It takes an already admitted request (built from a formula, a trace and the
-observation views by `request::derive` and `request::read`), evaluates it, reads
-the result back, and maps it:
+One request gives one result at one evaluation point, the `anchor`. The excerpt
+below is from the first test in
+[`tests/tc_084_temporal_owner_wire.rs`](tests/tc_084_temporal_owner_wire.rs),
+`tc_084_future_and_past_requests_evaluate_and_strict_read`. It starts from
+`future_request`, a request that `request::derive` wrote and `request::read`
+checked. It evaluates the request, reads the result back and maps it.
 
 ```rust
 let result_document = report::evaluate(
@@ -60,64 +66,65 @@ let mapped = contract_ir::read(
 assert_eq!(mapped.outcome(), MappedOutcome::Value { value: true });
 ```
 
-Every document carries an identity computed from its own canonical bytes, and
-every `read` re-derives the document from its inputs and refuses on any
-mismatch. A result cannot be read against a different request, and a mapping
-cannot be made from a result it was not selected for.
+Every document carries an identity computed from its own canonical bytes. Every
+`read` re-derives the document from its inputs and refuses on any mismatch, so a
+result cannot be read against a different request and a mapping cannot be read
+against a result it was not selected for. More examples are in
+[docs/examples.md](docs/examples.md).
 
-## Outcomes
-
-`contract_ir::map` checks the result in a fixed order, and the first row that
-applies decides the outcome. Only a completed, complete, available and settled
-result becomes a Boolean.
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/images/outcomes-dark.svg">
-  <img alt="A result is checked in order. Execution that did not complete, then completeness that is not complete, then an unavailable result, then unsettled truth each map to a NonValue with its own reason. Only a settled satisfied or violated result maps to a Boolean Value." src="docs/images/outcomes-light.svg">
-</picture>
-
-## Modules
-
-Each module owns one wire contract. The contract labels are constants in the
-code, and the JSON Schemas are checked in under [`schemas/`](schemas/).
+## Reference
 
 | Module | Contract label | What it does |
 | --- | --- | --- |
-| `request` | `quire-mltl.temporal-assessment-request/v1` | Admits the formula, proposition map, trace or history, clock and the four scope assertions (progress and closure, for the decision scope and the surrounding execution), plus completeness and availability, into one request. `derive` writes it; `read` checks bytes against independently supplied inputs. |
-| `report` | `quire-mltl.temporal-assessment-result/v1` | Evaluates a request through tl-mltl's future or past evaluator. Records execution, truth, settlement basis, decision support, resource usage and the correction relation to an earlier result. |
-| `contract_ir` | `quire-mltl.contract-ir-result-map/v1` | Maps a validated result to `Value { value }` or `NonValue { reason }`, embedding the whole source result so the two can be joined without loss. |
-| `dispatch` | uses the request label | Reports which Quire observation contracts this crate consumes. Temporal assessments are supported; the repair-plan and closed-population-query contracts belong to quire-observation and are reported as unsupported. |
-| `census` | none | A closed, reviewed registry of the classes of native/temporal correspondence, each marked applicable, excluded with a reason, or blocked on a named dependency. |
+| `request` | `quire-mltl.temporal-assessment-request/v1` | Admits the inputs and writes one canonical request. `derive` writes it and `read` checks bytes against independently supplied inputs. |
+| `report` | `quire-mltl.temporal-assessment-result/v1` | Evaluates a request with the tl-mltl future or past evaluator and records execution, truth, settlement, decision support, resource usage and the relation to an earlier result. |
+| `contract_ir` | `quire-mltl.contract-ir-result-map/v1` | Maps a result to `Value { value }` or `NonValue { reason }` and embeds the whole source result. |
+| `dispatch` | the request label | Reports which Quire observation contracts the crate consumes. |
+| `census` | none | A closed registry of the native/temporal correspondence classes, each applicable, excluded with a reason, or blocked on a named dependency. |
 
-### Result fields
-
-| Field | Values |
+| Result field | Values |
 | --- | --- |
 | `execution` | `completed`, `resource-incomplete`, `unsupported`, `failed`, `refused` |
 | `truth` | `satisfied`, `violated`, `pending`, `unavailable` |
 | `settlement` | `closed-scope`, `decisive-witness`, `decisive-counterexample`, `unsettled`, `unavailable` |
 | `relation` | `original`, `superseding`, `invalidating` |
 
-Truth, execution and the observation facts are recorded separately, so a
-result can say "satisfied" while the completeness assertion still keeps it from
-becoming a value.
+The non-value reasons are `pending`, `unavailable`, `incomplete`, `unsupported`,
+`failed`, `refused`, `contradicted` and `resource-incomplete`. `contract_ir::map`
+checks the result in a fixed order and the first row that applies decides the
+outcome. Only a completed, complete, available and settled result becomes a Boolean.
 
-### Non-value reasons
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/outcomes-dark.svg">
+  <img alt="A result is checked in order. Execution that did not complete, then completeness that is not complete, then an unavailable result, then unsettled truth each map to a NonValue with its own reason. Only a settled satisfied or violated result maps to a Boolean Value." src="docs/images/outcomes-light.svg">
+</picture>
 
-`pending`, `unavailable`, `incomplete`, `unsupported`, `failed`, `refused`,
-`contradicted`, `resource-incomplete`.
+The JSON Schemas for the three contracts are in [`schemas/`](schemas/). See
+[docs/api-reference.md](docs/api-reference.md) for the public items.
 
-## The Quire ecosystem
+## The TL stack
 
-`quire-mltl` is a backend: it sits between the temporal-logic crates and the
-observation layer. It depends on [tl-mltl](https://github.com/agent-ix/tl-mltl)
-and [tl-syntax](https://github.com/agent-ix/tl-syntax) for the formula, trace and
-evaluator, and on
-[quire-observation](https://github.com/agent-ix/quire-observation) for the
-progress, closure, completeness, availability and clock assertions. Its mapped
-outcomes are shaped to join the native/temporal correspondence contract in
-[quire-contract-ir](https://github.com/agent-ix/quire-contract-ir), which is
-referenced by label only and is not a dependency.
+tl-syntax holds the types every TL crate shares. tl-parse reads text into formula
+graphs, tl-rewrite and tl-mltl work on them, tl-oracle is a development-only
+reference evaluator, and quire-mltl is the one crate that connects the family to Quire.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/tl-stack-dark.svg">
+  <img alt="The TL crates. tl-syntax defines the formula graph, profiles and signal catalog, and tl-parse, tl-oracle, tl-mltl, tl-rewrite and quire-mltl all depend on it. tl-rewrite depends on tl-mltl. quire-mltl depends on tl-mltl and quire-observation, and is the single bridge to Quire. Dashed lines are development-only: tl-mltl and tl-rewrite test against tl-oracle, and tl-rewrite tests against tl-parse." src="docs/images/tl-stack-light.svg">
+</picture>
+
+[docs/how-it-works.md](docs/how-it-works.md) shows where each crate sits in the
+text-to-outcome pipeline.
+
+## Quire ecosystem
+
+quire-mltl depends on [tl-mltl](https://github.com/agent-ix/tl-mltl) and
+[tl-syntax](https://github.com/agent-ix/tl-syntax) for the formula, trace and
+evaluator, and on [quire-observation](https://github.com/agent-ix/quire-observation)
+for the progress, closure, completeness, availability and clock assertions. Its
+mapped outcomes are shaped to join the native/temporal correspondence contract in
+[quire-contract-ir](https://github.com/agent-ix/quire-contract-ir), which the crate
+names by label and does not depend on.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/ecosystem-dark.svg">
@@ -126,30 +133,23 @@ referenced by label only and is not a dependency.
 
 ## Building and testing
 
-```bash
-make ci
+```sh
+make test   # cargo test
+make ci     # format, clippy, tests, cargo deny, rustdoc
 ```
 
-`make ci` runs formatting, clippy, the tests, `cargo deny`, the unsafe-comment
-audit and the docs build. The Rust toolchain is pinned in
-[`rust-toolchain.toml`](rust-toolchain.toml). Hosted CI runs only when
-dispatched by hand, so run the gate locally before opening a pull request.
-
-The requirements live in [`spec/`](spec/): [`spec/spec.md`](spec/spec.md) is the
-master specification, with each requirement under
-[`spec/requirements/`](spec/requirements/) and the architecture decisions under
-[`spec/decisions/`](spec/decisions/). Tests carry `Trace:` tags naming the
-criteria they check. The figures are regenerated with the dev-tools
-`docs-figures` skill from [`docs/images/figures.py`](docs/images/figures.py).
+The Rust toolchain is pinned in [`rust-toolchain.toml`](rust-toolchain.toml).
+Hosted CI runs only when dispatched by hand, so run `make ci` before opening a
+pull request. The build fetches quire-observation, tl-mltl and tl-syntax from
+GitHub, so it needs read access to those repositories. The requirements and
+architecture decisions are in [`spec/`](spec/).
 
 ## Contributing
 
-Contributions need the [CLA](CLA.md). See [CONTRIBUTING.md](CONTRIBUTING.md) and
-[AGENTS.md](AGENTS.md).
+Read [CONTRIBUTING.md](CONTRIBUTING.md) and [CLA.md](CLA.md). See
+[AGENTS.md](AGENTS.md) for the repository workflow.
 
 ## License
 
-Licensed under [AGPL-3.0-or-later](LICENSE), the default for `quire-*` program
-repositories. `quire-mltl` directly incorporates `quire-observation`, which is
-also `AGPL-3.0-or-later`, so nothing in the dependency graph requires a narrower
-term.
+Licensed under [AGPL-3.0-or-later](LICENSE). quire-mltl incorporates
+quire-observation, which is also AGPL-3.0-or-later.
