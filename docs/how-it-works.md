@@ -48,7 +48,7 @@ A formula passes through several crates on its way from text to a Quire outcome.
 
 The calling program moves documents from one stage to the next. The dependency structure between the crates is in the [README](../README.md#the-tl-stack).
 
-## In a debugging session
+## A worked example
 
 quire-mltl is step 6 of a debugging session that asks why a deadline requirement failed. The requirement is `F[0,3] p2`, the recorded trace has four instants, `[[], [0, 1], [1], [1]]`, and `p2` (signal `s2`) is absent at every one of them. tl-mltl returns `false` at time 0 and R2U2 agrees. This crate takes that result and decides whether `false` can be reported as a value.
 
