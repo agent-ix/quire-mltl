@@ -9,7 +9,3 @@ quire-mltl evaluates an MLTL formula against a recorded trace or history and rep
 | [api-reference.md](api-reference.md) | Public items by module. |
 | [request-dispatch-report.md](request-dispatch-report.md) | The request, dispatch and report modules: admission checks, limits, execution outcomes, settlement and result lineage. |
 | [quire-observation.md](quire-observation.md) | The observation views the crate consumes and the checks that tie them together. |
-
-## Scope
-
-The crate admits inputs, evaluates them through tl-mltl and maps the result. It does not parse formulas (tl-parse), rewrite them (tl-rewrite), implement temporal semantics (tl-mltl) or produce observation facts (quire-observation). tl-oracle is an independent reference evaluator that the other crates use in tests. The public API is not stable and the crate has `publish = false`.

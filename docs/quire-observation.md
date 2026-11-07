@@ -1,6 +1,6 @@
 # Observation views
 
-quire-mltl does not produce observation facts. It consumes six views that [quire-observation](https://github.com/agent-ix/quire-observation) reports, together with a clock view, and records a reference to each in the request.
+quire-mltl consumes six views that [quire-observation](https://github.com/agent-ix/quire-observation) reports, together with a clock view, and records a reference to each in the request.
 
 | View | Request field | What it asserts |
 | --- | --- | --- |
