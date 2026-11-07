@@ -4,21 +4,16 @@
 [![License](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue)](#license)
 [![Rust](https://img.shields.io/badge/rust-1.98%2B-orange?logo=rust)](Cargo.toml)
 
-quire-mltl is a Rust crate that evaluates a Mission-time Linear Temporal Logic
-(MLTL) formula against a recorded trace or history and reports the result as a
-Boolean value or a typed reason why there is no value. It is the one crate in the
-TL family that depends on Quire: [tl-syntax](https://github.com/agent-ix/tl-syntax)
-defines the formula types, [tl-parse](https://github.com/agent-ix/tl-parse) reads
-text, [tl-rewrite](https://github.com/agent-ix/tl-rewrite) rewrites formulas,
-[tl-mltl](https://github.com/agent-ix/tl-mltl) evaluates them and
-[tl-oracle](https://github.com/agent-ix/tl-oracle) cross-checks the evaluator in tests.
+quire-mltl evaluates a Mission-time Linear Temporal Logic (MLTL) formula on a
+recorded trace or history and gives the Quire assurance record either a Boolean
+value or a named reason there is none, such as pending, unavailable or incomplete.
 
-The crate admits a formula, a proposition map, a trace or history, a clock and
-the progress, closure, completeness and availability facts that
+It takes a formula, a proposition map, a trace or history, a clock and the
+progress, closure, completeness and availability facts that
 [quire-observation](https://github.com/agent-ix/quire-observation) reports, and
-writes them as one canonical request. It evaluates the request with tl-mltl and maps
-the result to a value or a named non-value. It does not parse formulas, rewrite
-them or implement temporal semantics, and it does not produce the observation facts.
+writes them as one canonical request. Each step writes a document with its own
+identity, and reading it back re-derives it from the inputs, so a result cannot be
+paired with the wrong request.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/hero-dark.svg">
@@ -49,10 +44,7 @@ cargo build --release
 ## Usage
 
 One request gives one result at one evaluation point, the `anchor`. The excerpt
-below is from the first test in
-[`tests/tc_084_temporal_owner_wire.rs`](tests/tc_084_temporal_owner_wire.rs),
-`tc_084_future_and_past_requests_evaluate_and_strict_read`. It starts from
-`future_request`, a request that `request::derive` wrote and `request::read`
+below starts from `future_request`, a request that `request::derive` wrote and `request::read`
 checked. It evaluates the request, reads the result back and maps it.
 
 ```rust
@@ -121,17 +113,12 @@ The JSON Schemas for the three contracts are in [`schemas/`](schemas/). See
 
 ## The TL stack
 
-tl-syntax holds the types every TL crate shares. tl-parse reads text into formula
-graphs, tl-rewrite and tl-mltl work on them, tl-oracle is a development-only
-reference evaluator, and quire-mltl is the one crate that connects the family to Quire.
+quire-mltl is the one crate that connects the family to Quire.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/tl-stack-dark.svg">
   <img alt="The TL crates. tl-syntax defines the formula graph, profiles and signal catalog, and tl-parse, tl-oracle, tl-mltl, tl-rewrite and quire-mltl all depend on it. tl-rewrite depends on tl-mltl. quire-mltl depends on tl-mltl and quire-observation, and is the single bridge to Quire. Dashed lines are development-only: tl-mltl and tl-rewrite test against tl-oracle, and tl-rewrite tests against tl-parse." src="docs/images/tl-stack-light.svg">
 </picture>
-
-[docs/how-it-works.md](docs/how-it-works.md) shows where each crate sits in the
-text-to-outcome pipeline.
 
 ## Quire ecosystem
 
@@ -140,8 +127,7 @@ quire-mltl depends on [tl-mltl](https://github.com/agent-ix/tl-mltl) and
 evaluator, and on [quire-observation](https://github.com/agent-ix/quire-observation)
 for the progress, closure, completeness, availability and clock assertions. Its
 mapped outcomes are shaped to join the native/temporal correspondence contract in
-[quire-contract-ir](https://github.com/agent-ix/quire-contract-ir), which the crate
-names by label and does not depend on.
+[quire-contract-ir](https://github.com/agent-ix/quire-contract-ir).
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/ecosystem-dark.svg">
@@ -156,15 +142,13 @@ make ci     # format, clippy, tests, cargo deny, rustdoc
 ```
 
 The Rust toolchain is pinned in [`rust-toolchain.toml`](rust-toolchain.toml).
-Hosted CI runs only when dispatched by hand, so run `make ci` before opening a
-pull request. The build fetches quire-observation, tl-mltl and tl-syntax from
+Run `make ci` before opening a pull request. The build fetches quire-observation, tl-mltl and tl-syntax from
 GitHub, so it needs read access to those repositories. The requirements and
 architecture decisions are in [`spec/`](spec/).
 
 ## Contributing
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md) and [CLA.md](CLA.md). See
-[AGENTS.md](AGENTS.md) for the repository workflow.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) and [CLA.md](CLA.md).
 
 ## License
 
