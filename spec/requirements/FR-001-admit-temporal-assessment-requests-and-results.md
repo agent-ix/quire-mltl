@@ -46,6 +46,10 @@ evaluation semantic they already carry.
 - For result evaluation: the admitted `ValidatedTemporalRequest` plus an
   explicit `ResultRelationInput` (`Original`, or the exact predecessor result
   being `Superseding`/`Invalidating`).
+- The public `RequestInput` and `ObservationInputs` use the same `tl-mltl`,
+  `tl-syntax`, and `quire-observation` type identities as the integration
+  cohort's branch-main dependencies, so a consumer can supply those types
+  directly without conversion.
 
 ## Outputs
 
@@ -167,6 +171,7 @@ evaluation semantic they already carry.
 | FR-001-AC-7 | A structurally valid request or result document whose bytes do not equal the canonical re-serialization of their own decoded value is refused with `OwnerReadErrorCode::NonCanonical`, even when every field value is otherwise valid. | Test |
 | FR-001-AC-8 | A formula referencing a `Proposition` node id absent from the supplied proposition map is refused with `ExpectedMismatch("propositionMap")` before evaluation begins; the same formula against a proposition map that includes every referenced id is admitted. | Test |
 | FR-001-AC-9 | For the past lane, a clock/history-binding pairing other than `EventPosition`/`EventPosition` or an exactly-agreeing `FixedSample`/`FixedSample` pair (nanosecond unit, denominator 1 on both epoch and period, numerators equal to the clock's `epochNanos`/`periodNanos`) is refused with `ExpectedMismatch("clockBinding")`. | Test |
+| FR-001-AC-10 | A consumer can construct `RequestInput` and `ObservationInputs` directly from the public `tl-mltl`, `tl-syntax`, and `quire-observation` branch-main cohort types; each field has one compile-time type identity with its owner crate, with no conversion or duplicate rev-pinned identity. | Compile test |
 
 ## Dependencies
 

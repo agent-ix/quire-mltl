@@ -507,7 +507,8 @@ fn execute(
                     request.wire().anchor,
                     evaluator_limits,
                 ),
-                tl_syntax::SemanticProfile::OriginCompleteHistoryV1 => {
+                tl_syntax::SemanticProfile::OriginCompleteHistoryV1
+                | tl_syntax::SemanticProfile::InfiniteTraceV1 => {
                     return (Err(AssessmentExecution::Refused), 0, 0);
                 }
             };
