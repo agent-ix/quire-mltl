@@ -1,6 +1,7 @@
 # quire-mltl
 
 [![Discord](https://img.shields.io/badge/Discord-Join%20us-5865F2?logo=discord&logoColor=white)](https://discord.gg/k8DVhuYBR2)
+[![Quire](https://img.shields.io/badge/Quire-Specification%20Language-1F6FEB)](https://github.com/agent-ix/quire-spec-language)
 [![License](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue)](#license)
 [![Rust](https://img.shields.io/badge/rust-1.98%2B-orange?logo=rust)](Cargo.toml)
 
