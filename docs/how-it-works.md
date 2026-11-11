@@ -10,7 +10,7 @@ The crate exchanges three canonical JSON documents. Each carries a `contractVers
 | Temporal assessment result | `report` | `quire-mltl.temporal-assessment-result/v1` |
 | Contract-IR result map | `contract_ir` | `quire-mltl.contract-ir-result-map/v1` |
 
-`request::derive` writes a request from owner-read inputs. `report::evaluate` evaluates a validated request and writes a result. `contract_ir::map` maps a validated result to a value or a non-value. Each module also has a `read` function that takes bytes plus the exact inputs the document should have been derived from. `read` re-derives the document and refuses with an `OwnerReadError` on any difference, including a stale identity, a different contract label, a non-canonical encoding or a resource ceiling exceeded. The three schemas are checked in under [`schemas/`](../schemas/).
+`request::derive` writes a request from owner-read inputs. `report::evaluate` evaluates a validated request and writes a result. `contract_ir::map` maps a validated result to a value or a non-value. Each module also has a `read` function that takes bytes plus the exact inputs the document should have been derived from. `read` re-derives the document (except `report::read`, which binds the recorded result to its request and relation without evaluating) and refuses with an `OwnerReadError` on any difference, including a stale identity, a different contract label, a non-canonical encoding or a resource ceiling exceeded. The three schemas are checked in under [`schemas/`](../schemas/).
 
 ## Lanes
 

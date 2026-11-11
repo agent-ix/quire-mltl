@@ -114,8 +114,9 @@ all of them to `quire-mltl`. `quire-mltl` binds them into one immutable
 canonical temporal-assessment request, evaluates it through `tl-mltl`'s
 existing evaluators, emits one immutable canonical result, and can derive a
 separate TL-owned Contract-IR mapping view from that result. Every emitted
-document is bounded, canonical, and independently re-derivable by a strict
-reader; no branch accepts a caller-asserted fact it did not itself validate
+document is bounded and canonical, and a strict reader either re-derives it
+(request, mapping) or, for a result, binds the recorded outcome to its request
+without re-running the evaluator; no branch accepts a caller-asserted fact it did not itself validate
 against the supplied owner views.
 
 ## Requirements Architecture

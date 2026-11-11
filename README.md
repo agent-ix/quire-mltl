@@ -13,8 +13,9 @@ It takes a formula, a proposition map, a trace or history, a clock and the
 progress, closure, completeness and availability facts that
 [quire-observation](https://github.com/agent-ix/quire-observation) reports, and
 writes them as one canonical request. Each step writes a document with its own
-identity, and reading it back re-derives it from the inputs, so a result cannot be
-paired with the wrong request.
+identity. Reading a request or mapping back re-derives it from the inputs; reading a
+result back binds it to its request without re-running the evaluator, so a result
+cannot be paired with the wrong request.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/hero-dark.svg">
@@ -77,7 +78,8 @@ assert_eq!(mapped.outcome(), MappedOutcome::Value { value: true });
 ```
 
 Every document carries an identity computed from its own canonical bytes. Every
-`read` re-derives the document from its inputs and refuses on any mismatch, so a
+`read` checks the document against its inputs and refuses on any mismatch (`report::read`
+binds the recorded result to its request and never re-runs the evaluator), so a
 result cannot be read against a different request and a mapping cannot be read
 against a result it was not selected for. More examples are in
 [docs/examples.md](docs/examples.md).

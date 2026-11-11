@@ -63,7 +63,7 @@ The three execution outcomes `unsupported`, `failed` and `refused` are part of t
 
 ### Result lineage
 
-`ResultRelationInput` states how a result relates to an earlier one. `Original` is the first result and has revision 1. `Superseding(&earlier)` and `Invalidating(&earlier)` take the complete earlier validated result. They require the new request to match the earlier one in lane, formula, proposition map, clock, evaluator, anchor, subject identity and correspondence identity, and refuse with `correctionContext` otherwise. They record the earlier result's identity and digest as the direct predecessor, record the new request identity as the corrected request, and give the new result the next revision. `report::read` re-evaluates with the same relation and refuses a result that was read against a different predecessor.
+`ResultRelationInput` states how a result relates to an earlier one. `Original` is the first result and has revision 1. `Superseding(&earlier)` and `Invalidating(&earlier)` take the complete earlier validated result. They require the new request to match the earlier one in lane, formula, proposition map, clock, evaluator, anchor, subject identity and correspondence identity, and refuse with `correctionContext` otherwise. They record the earlier result's identity and digest as the direct predecessor, record the new request identity as the corrected request, and give the new result the next revision. `report::read` does not evaluate: it recomputes the expected lineage revision and predecessor digest from the same relation and refuses a result recorded against a different predecessor. The recorded truth is carried, not re-derived.
 
 ## census
 

@@ -9,7 +9,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use quire_observation::authority::completeness;
 use serde::{Deserialize, Serialize};
 
-use tl_mltl::wire::common::{identity, is_sha256, produce, raw_sha256, read_expected};
+use tl_mltl::wire::common::{identity, is_sha256, produce, raw_sha256};
 use tl_mltl::wire::{OwnerLimits, OwnerReadError, OwnerReadErrorCode, OwnerUsage};
 use tl_mltl::{
     evaluate_closed_at_with_stats, evaluate_past_with_stats, evaluate_prefix_at_with_stats,
@@ -446,13 +446,14 @@ impl ValidatedTemporalResult {
         &self.bytes
     }
 
-    /// Bounded read/evaluation work.
+    /// Bounded work: recorded semantic usage plus the lexical usage (bytes,
+    /// depth, string bytes, visited fields) measured from the canonical bytes.
     #[must_use]
     pub const fn usage(&self) -> OwnerUsage {
         self.usage
     }
 
-    /// Exact validated request used for re-derivation.
+    /// Exact validated request this result was bound to at read.
     #[must_use]
     pub const fn request(&self) -> &ValidatedTemporalRequest {
         &self.request
@@ -475,27 +476,105 @@ pub fn evaluate(
     Ok(TemporalResultDocument { wire, bytes, usage })
 }
 
-/// Strict-reads a result by re-evaluating its exact request and predecessor relation.
+/// Strict-reads a produced result against its exact request and predecessor
+/// relation without running any evaluator (FR-001-AC-13).
+///
+/// The bytes are bounded by every owner ceiling (input bytes, depth, string
+/// bytes, visited fields, support, evaluation steps, recursion depth and the
+/// request population), decoded into the typed wire (unknown fields refused),
+/// checked for canonical encoding, content identity, internal state
+/// consistency and recorded-usage agreement with the request, and then bound to `request` and
+/// `relation`: every request-derived field, the lineage revision and
+/// predecessor digest, and the decision-support identities must match what the
+/// request declares. The recorded execution, truth and settlement are taken
+/// from the produced document; they are never re-derived, so this read is
+/// total over bounded work and cannot reach the evaluators.
+///
+/// # Errors
+///
+/// Returns a typed [`OwnerReadError`]: `ResourceIncomplete` for an input or
+/// recorded-usage ceiling, `InvalidUtf8`/`InvalidJson`/`NonCanonical` for the
+/// bytes, `ContractMismatch`/`IdentityMismatch`/`InvalidCombination` for an
+/// internally inconsistent document, and `ExpectedMismatch` when the document
+/// does not belong to the supplied request, relation or support population.
 pub fn read(
     bytes: &[u8],
     request: &ValidatedTemporalRequest,
     relation: ResultRelationInput<'_>,
     limits: OwnerLimits,
 ) -> Result<ValidatedTemporalResult, OwnerReadError> {
+    let effective = limits.effective();
     let predecessor = match relation {
         ResultRelationInput::Original => None,
         ResultRelationInput::Superseding(predecessor)
         | ResultRelationInput::Invalidating(predecessor) => Some(predecessor),
     };
     if let Some(predecessor) = predecessor {
-        if predecessor.bytes().len() > limits.effective().max_input_bytes {
+        if predecessor.bytes().len() > effective.max_input_bytes {
             return Err(resource("directPredecessor", predecessor.usage()));
         }
     }
-    let (expected, expected_usage) = build_wire(request, relation, limits.effective())?;
-    let (wire, usage) = read_expected(bytes, &expected, limits, |wire, effective| {
-        validate_wire(wire, effective, expected_usage)
+    let request_usage = request.usage();
+    if request_usage.formula_nodes > effective.max_formula_nodes
+        || request_usage.positions > effective.max_positions
+        || request_usage.propositions > effective.max_propositions
+    {
+        return Err(resource("requestPopulation", request_usage));
+    }
+    let observed = OwnerUsage {
+        wire_bytes: bytes.len(),
+        ..OwnerUsage::default()
+    };
+    if bytes.len() > effective.max_input_bytes {
+        return Err(resource("document", observed));
+    }
+    if std::str::from_utf8(bytes).is_err() {
+        return Err(OwnerReadError::new(
+            OwnerReadErrorCode::InvalidUtf8,
+            "document",
+            observed,
+        ));
+    }
+    let mut deserializer = serde_json::Deserializer::from_slice(bytes);
+    let wire = ResultWire::deserialize(&mut deserializer)
+        .map_err(|_| OwnerReadError::new(OwnerReadErrorCode::InvalidJson, "document", observed))?;
+    deserializer.end().map_err(|_| {
+        OwnerReadError::new(OwnerReadErrorCode::InvalidJson, "trailingData", observed)
     })?;
+    let semantic = OwnerUsage {
+        formula_nodes: request.formula_document().nodes().len(),
+        formula_depth: request_usage.formula_depth,
+        positions: request_usage.positions,
+        propositions: request_usage.propositions,
+        support: wire.decision_support.len(),
+        history_span: request_usage.history_span,
+        evaluation_steps: wire.usage.evaluation_steps,
+        recursion_depth: wire.usage.recursion_depth,
+        ..OwnerUsage::default()
+    };
+    // Recorded usage must equal what the request and the document's own
+    // support list imply, and every ceiling must hold.
+    validate_wire(&wire, effective, semantic)?;
+    // Re-encoding through the owner producer measures the lexical usage
+    // (bytes, depth, string bytes, visited fields) and enforces the depth,
+    // string and visited-field ceilings on the bytes actually read.
+    let produced = produce(
+        wire,
+        semantic,
+        OwnerLimits {
+            max_output_bytes: effective.max_input_bytes,
+            ..effective
+        },
+    )?;
+    let (wire, canonical, usage) = produced.into_parts();
+    if canonical != bytes {
+        return Err(OwnerReadError::new(
+            OwnerReadErrorCode::NonCanonical,
+            "document",
+            usage,
+        ));
+    }
+    bind_request(&wire, request, relation, usage)?;
     Ok(ValidatedTemporalResult {
         wire,
         bytes: bytes.to_vec(),
@@ -503,6 +582,62 @@ pub fn read(
         request: request.clone(),
         direct_predecessor_bytes: predecessor.map(|predecessor| predecessor.bytes().to_vec()),
     })
+}
+
+/// Requires every request- and lineage-derived field of `wire` to equal what
+/// `request` and `relation` declare, and the support population to be exactly
+/// the request's available observation identities for a final result.
+fn bind_request(
+    wire: &ResultWire,
+    request: &ValidatedTemporalRequest,
+    relation: ResultRelationInput<'_>,
+    usage: OwnerUsage,
+) -> Result<(), OwnerReadError> {
+    let (revision, relation) = relation_wire(request, relation)?;
+    let source = request.wire();
+    let bound = ResultWire {
+        revision,
+        request: ArtifactReference {
+            contract: super::request::CONTRACT.to_owned(),
+            identity: request.identity().to_owned(),
+            revision: 1,
+            digest: raw_sha256(request.bytes()),
+        },
+        lane: source.lane,
+        subject_identity: source.subject_identity.clone(),
+        correspondence_identity: source.correspondence_identity.clone(),
+        formula: source.formula.clone(),
+        input: source.input.clone(),
+        proposition_map: source.proposition_map.clone(),
+        clock: source.clock.clone(),
+        evaluator: source.evaluator.clone(),
+        anchor: source.anchor,
+        decision_scope_progress: source.decision_scope_progress.clone(),
+        decision_scope_closure: source.decision_scope_closure.clone(),
+        surrounding_execution_progress: source.surrounding_execution_progress.clone(),
+        surrounding_execution_closure: source.surrounding_execution_closure.clone(),
+        completeness: source.completeness.clone(),
+        availability: source.availability.clone(),
+        relation,
+        ..wire.clone()
+    };
+    if &bound != wire {
+        return Err(expected("request", usage));
+    }
+    if wire.final_result {
+        let available: BTreeSet<&str> = request
+            .completeness()
+            .facts()
+            .iter()
+            .filter(|fact| fact.status() == completeness::FactStatus::Available)
+            .filter_map(|fact| fact.observation_identity())
+            .collect();
+        let supplied: BTreeSet<&str> = wire.decision_support.iter().map(String::as_str).collect();
+        if available != supplied {
+            return Err(expected("decisionSupport", usage));
+        }
+    }
+    Ok(())
 }
 
 fn build_wire(
