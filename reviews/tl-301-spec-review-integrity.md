@@ -36,3 +36,14 @@ Ticket: TL-301; PR: quire-mltl#27; reviewed head 7a2f0a98e8d7c59fd1d75e7b62f48a7
 - FR-001 body (line ~162) "Every reader independently re-derives the applicable identity" still holds: identity is still recomputed.
 - FR-005-AC-4's replay re-derivation is unaffected: the census evaluates through `report::evaluate` before reading.
 - Sub-analyses not selected: EARS (no new requirement statement, only an AC row), object/dependency (no new domain object or relationship edge), security (no authentication or cryptographic authority added; the content identity was never an authenticity mechanism).
+
+## Disposition round 1 supplement
+
+Reviewed head 1751b3cc00dad2d870477ff6581642aedaf5a949. All findings are fixed on the exercised source; no new findings. Behavior judged: the lexical ceilings (depth, string bytes, visited fields) are now checked after typed decode, on the re-encoded canonical bytes, rather than by a pre-decode scan. This is acceptable: before decode the work is bounded by the effective `max_input_bytes` and serde_json's recursion limit, decode allocation is linear in those bytes, the refusal is still a typed `ResourceIncomplete` naming the field, and no partial document is returned. The visible differences are refusal precedence (a document that is both over a lexical ceiling and otherwise invalid may report the other code first) and that a string over `max_string_bytes` is allocated once before refusal; neither breaks AC-13 or the bounded-work guarantee. `tl_mltl::wire::common::read`/`preflight` are crate-private, so a pre-decode scan would need a tl-mltl API change. `make ci` passed once on this head.
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | Round 1, 1751b3c: FR-001-CON-2 now separates evaluate (produces from the evaluator outcome) from report::read (accepts only the content-identified, state-consistent recorded outcome bound to the request); spec/spec.md overview reworded the same way. |
+| FND-002 | fixed | Round 1, 1751b3c: AC-13 now requires every owner ceiling (input bytes, depth, string bytes, visited fields, formula nodes, positions, propositions, support, evaluation steps, recursion depth) with lexical usage measured from the read bytes. |

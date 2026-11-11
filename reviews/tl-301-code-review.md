@@ -42,3 +42,16 @@ Ticket: TL-301; PR: quire-mltl#27; reviewed head 7a2f0a98e8d7c59fd1d75e7b62f48a7
 - FND-002: `recorded_usage` copies `wire.usage`; `validate_wire(&wire, effective, usage)` then compares `wire.usage` with `usage_wire(usage)`, which is the same data. `build_wire` records `wire_bytes`/`depth`/`string_bytes`/`visited_fields` as 0, so `ValidatedTemporalResult::usage()` after a read now reports 0 for them where it previously reported observed lexical usage (merge_usage). The ceiling still caught by validate_wire (support, steps, recursion depth) is correct.
 - Rust lane: fmt and clippy -D warnings clean under `make ci`. Error mapping is typed and bounded; `usize::try_from` used for u64 conversion; no panics, unsafe or unbounded allocation beyond the input-byte ceiling. `Encoding` is reachable from the re-serialization path but is not in AC-13's code list (spec-review covers it).
 - Gate: `make ci` on 7a2f0a9 passed: fmt-check, clippy, 54 tests across 7 test binaries, cargo deny, cargo doc -D warnings.
+
+## Disposition round 1 supplement
+
+Reviewed head 1751b3cc00dad2d870477ff6581642aedaf5a949. All findings are fixed on the exercised source; no new findings. Behavior judged: the lexical ceilings (depth, string bytes, visited fields) are now checked after typed decode, on the re-encoded canonical bytes, rather than by a pre-decode scan. This is acceptable: before decode the work is bounded by the effective `max_input_bytes` and serde_json's recursion limit, decode allocation is linear in those bytes, the refusal is still a typed `ResourceIncomplete` naming the field, and no partial document is returned. The visible differences are refusal precedence (a document that is both over a lexical ceiling and otherwise invalid may report the other code first) and that a string over `max_string_bytes` is allocated once before refusal; neither breaks AC-13 or the bounded-work guarantee. `tl_mltl::wire::common::read`/`preflight` are crate-private, so a pre-decode scan would need a tl-mltl API change. `make ci` passed once on this head.
+
+## Dispositions
+
+| FND | outcome | reason |
+| --- | --- | --- |
+| FND-001 | fixed | Round 1, 1751b3c: read re-encodes through tl_mltl produce, whose preflight enforces max_depth, max_string_bytes and max_visited_fields on the canonical bytes (equal to the read bytes); tc_088 read_enforces_every_ceiling_and_measures_usage admits each at the measured ceiling and refuses one under with ResourceIncomplete and the named field. |
+| FND-002 | fixed | Round 1, 1751b3c: recorded_usage removed; semantic usage is built from the request (formula nodes/depth, positions, propositions, history span) and the support list, validate_wire compares the recorded usage against it, and the returned usage merges the lexical usage measured by produce; tc_088 asserts read usage equals evaluate usage. |
+| FND-003 | fixed | Round 1, 1751b3c: README.md, docs/api-reference.md, docs/how-it-works.md and docs/request-dispatch-report.md now say report::read binds the recorded result without running the evaluator. |
+| FND-004 | fixed | Round 1, 1751b3c: rustdoc on usage() and request() updated. |
