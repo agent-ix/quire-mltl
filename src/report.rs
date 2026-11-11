@@ -446,13 +446,14 @@ impl ValidatedTemporalResult {
         &self.bytes
     }
 
-    /// Bounded read/evaluation work.
+    /// Bounded work: recorded semantic usage plus the lexical usage (bytes,
+    /// depth, string bytes, visited fields) measured from the canonical bytes.
     #[must_use]
     pub const fn usage(&self) -> OwnerUsage {
         self.usage
     }
 
-    /// Exact validated request used for re-derivation.
+    /// Exact validated request this result was bound to at read.
     #[must_use]
     pub const fn request(&self) -> &ValidatedTemporalRequest {
         &self.request
@@ -478,9 +479,11 @@ pub fn evaluate(
 /// Strict-reads a produced result against its exact request and predecessor
 /// relation without running any evaluator (FR-001-AC-13).
 ///
-/// The bytes are bounded by `limits.max_input_bytes`, decoded into the typed
-/// wire (unknown fields refused), checked for canonical encoding, content
-/// identity and internal state consistency, and then bound to `request` and
+/// The bytes are bounded by every owner ceiling (input bytes, depth, string
+/// bytes, visited fields, support, evaluation steps, recursion depth and the
+/// request population), decoded into the typed wire (unknown fields refused),
+/// checked for canonical encoding, content identity, internal state
+/// consistency and recorded-usage agreement with the request, and then bound to `request` and
 /// `relation`: every request-derived field, the lineage revision and
 /// predecessor digest, and the decision-support identities must match what the
 /// request declares. The recorded execution, truth and settlement are taken
@@ -538,13 +541,32 @@ pub fn read(
     deserializer.end().map_err(|_| {
         OwnerReadError::new(OwnerReadErrorCode::InvalidJson, "trailingData", observed)
     })?;
-    let usage = recorded_usage(&wire.usage, observed)?;
-    validate_wire(&wire, effective, usage)?;
-    if wire.decision_support.len() != usage.support {
-        return Err(resource("resultUsage", usage));
-    }
-    let canonical = serde_json::to_vec(&wire)
-        .map_err(|_| OwnerReadError::new(OwnerReadErrorCode::Encoding, "document", usage))?;
+    let semantic = OwnerUsage {
+        formula_nodes: request.formula_document().nodes().len(),
+        formula_depth: request_usage.formula_depth,
+        positions: request_usage.positions,
+        propositions: request_usage.propositions,
+        support: wire.decision_support.len(),
+        history_span: request_usage.history_span,
+        evaluation_steps: wire.usage.evaluation_steps,
+        recursion_depth: wire.usage.recursion_depth,
+        ..OwnerUsage::default()
+    };
+    // Recorded usage must equal what the request and the document's own
+    // support list imply, and every ceiling must hold.
+    validate_wire(&wire, effective, semantic)?;
+    // Re-encoding through the owner producer measures the lexical usage
+    // (bytes, depth, string bytes, visited fields) and enforces the depth,
+    // string and visited-field ceilings on the bytes actually read.
+    let produced = produce(
+        wire,
+        semantic,
+        OwnerLimits {
+            max_output_bytes: effective.max_input_bytes,
+            ..effective
+        },
+    )?;
+    let (wire, canonical, usage) = produced.into_parts();
     if canonical != bytes {
         return Err(OwnerReadError::new(
             OwnerReadErrorCode::NonCanonical,
@@ -616,25 +638,6 @@ fn bind_request(
         }
     }
     Ok(())
-}
-
-fn recorded_usage(wire: &UsageWire, observed: OwnerUsage) -> Result<OwnerUsage, OwnerReadError> {
-    let size =
-        |value: u64| usize::try_from(value).map_err(|_| resource("usageConversion", observed));
-    Ok(OwnerUsage {
-        wire_bytes: size(wire.wire_bytes)?,
-        depth: size(wire.depth)?,
-        string_bytes: size(wire.string_bytes)?,
-        formula_nodes: size(wire.formula_nodes)?,
-        formula_depth: size(wire.formula_depth)?,
-        positions: size(wire.positions)?,
-        propositions: size(wire.propositions)?,
-        support: size(wire.support)?,
-        history_span: wire.history_span,
-        evaluation_steps: wire.evaluation_steps,
-        recursion_depth: wire.recursion_depth,
-        visited_fields: size(wire.visited_fields)?,
-    })
 }
 
 fn build_wire(

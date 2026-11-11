@@ -27,7 +27,7 @@ The crate has five public modules: `request`, `report`, `contract_ir`, `dispatch
 | --- | --- |
 | `CONTRACT`, `SCHEMA_BYTES` | The contract label and the checked-in JSON Schema bytes. |
 | `evaluate(request, relation, limits)` | Evaluates a validated request and returns a `TemporalResultDocument`. |
-| `read(bytes, request, relation, limits)` | Re-evaluates the request and strict-reads the bytes into a `ValidatedTemporalResult`. |
+| `read(bytes, request, relation, limits)` | Strict-reads the bytes into a `ValidatedTemporalResult` bound to the request and relation, under every owner ceiling, without running an evaluator. The recorded truth is carried, not re-derived. |
 | `ResultRelationInput<'a>` | `Original`, `Superseding(&result)` or `Invalidating(&result)`. |
 | `AssessmentExecution` | `Completed`, `ResourceIncomplete`, `Unsupported`, `Failed`, `Refused`. |
 | `TemporalTruth` | `Satisfied`, `Violated`, `Pending`, `Unavailable`. |

@@ -173,3 +173,147 @@ fn read_refuses_a_document_that_does_not_match_the_supplied_relation() {
     .unwrap_err();
     assert_eq!(error.code(), OwnerReadErrorCode::ExpectedMismatch);
 }
+
+fn field_value(text: &str, key: &str) -> String {
+    let marker = format!("\"{key}\":");
+    let rest = text.split(&marker).nth(1).unwrap();
+    let end = rest.find([',', '}']).unwrap();
+    rest[..end].to_owned()
+}
+
+fn forged_code(request: &ValidatedTemporalRequest, forged: &str) -> OwnerReadErrorCode {
+    read_original(
+        reidentify(forged).as_bytes(),
+        request,
+        OwnerLimits::default(),
+    )
+    .unwrap_err()
+    .code()
+}
+
+/// Every lexical ceiling is enforced on the bytes read, and the usage returned
+/// is measured from them (equal to the producer's), admitted at the measured
+/// ceiling and refused one under.
+#[test]
+#[trace("FR-001-AC-13")]
+fn read_enforces_every_ceiling_and_measures_usage() {
+    let (request, text) = produced();
+    let defaults = OwnerLimits::default();
+    let document = report::evaluate(&request, ResultRelationInput::Original, defaults).unwrap();
+    let result = read_original(text.as_bytes(), &request, defaults).unwrap();
+    assert_eq!(result.usage(), document.usage());
+    let usage = result.usage();
+    assert!(usage.depth > 1 && usage.string_bytes > 1 && usage.visited_fields > 1);
+    let at = |limits: OwnerLimits| read_original(text.as_bytes(), &request, limits);
+    let cases: [(OwnerLimits, OwnerLimits, &str); 3] = [
+        (
+            OwnerLimits {
+                max_depth: usage.depth,
+                ..defaults
+            },
+            OwnerLimits {
+                max_depth: usage.depth - 1,
+                ..defaults
+            },
+            "depth",
+        ),
+        (
+            OwnerLimits {
+                max_string_bytes: usage.string_bytes,
+                ..defaults
+            },
+            OwnerLimits {
+                max_string_bytes: usage.string_bytes - 1,
+                ..defaults
+            },
+            "stringBytes",
+        ),
+        (
+            OwnerLimits {
+                max_visited_fields: usage.visited_fields,
+                ..defaults
+            },
+            OwnerLimits {
+                max_visited_fields: usage.visited_fields - 1,
+                ..defaults
+            },
+            "visitedFields",
+        ),
+    ];
+    for (admit, refuse, field) in cases {
+        assert!(at(admit).is_ok(), "{field} at ceiling");
+        let error = at(refuse).unwrap_err();
+        assert_eq!(
+            error.code(),
+            OwnerReadErrorCode::ResourceIncomplete,
+            "{field}"
+        );
+        assert_eq!(error.field(), field);
+    }
+    let support = OwnerLimits {
+        max_support: usage.support - 1,
+        ..defaults
+    };
+    assert_eq!(
+        at(support).unwrap_err().code(),
+        OwnerReadErrorCode::ResourceIncomplete
+    );
+}
+
+/// A re-identified document that changes decision support or an echoed
+/// request field is refused: it is internally consistent but not this
+/// request's result.
+#[test]
+#[trace("FR-001-AC-13")]
+fn read_refuses_forged_support_and_echoed_request_fields() {
+    let (request, text) = produced();
+    let anchor = field_value(&text, "anchor");
+    let next: u64 = anchor.parse::<u64>().unwrap() + 1;
+    let anchored = text.replacen(
+        &format!("\"anchor\":{anchor}"),
+        &format!("\"anchor\":{next}"),
+        1,
+    );
+    assert_eq!(
+        forged_code(&request, &anchored),
+        OwnerReadErrorCode::ExpectedMismatch
+    );
+
+    let subject = field_value(&text, "subjectIdentity");
+    let subjected = text.replacen(&subject, "\"forged-subject\"", 1);
+    assert_eq!(
+        forged_code(&request, &subjected),
+        OwnerReadErrorCode::ExpectedMismatch
+    );
+
+    let support = text
+        .split("\"decisionSupport\":[")
+        .nth(1)
+        .and_then(|rest| rest.split(']').next())
+        .unwrap();
+    assert!(!support.is_empty(), "fixture result is final with support");
+    let count = field_value(&text, "support");
+    let emptied = text
+        .replacen(
+            &format!("\"decisionSupport\":[{support}]"),
+            "\"decisionSupport\":[]",
+            1,
+        )
+        .replacen(&format!("\"support\":{count}"), "\"support\":0", 1);
+    assert_eq!(
+        forged_code(&request, &emptied),
+        OwnerReadErrorCode::ExpectedMismatch
+    );
+}
+
+/// A consistent-looking but impossible state is an invalid combination.
+#[test]
+#[trace("FR-001-AC-13")]
+fn read_reaches_invalid_combination() {
+    let (request, text) = produced();
+    let revised = text.replacen("\"revision\":1", "\"revision\":2", 1);
+    assert_eq!(
+        forged_code(&request, &revised),
+        OwnerReadErrorCode::InvalidCombination
+    );
+}
